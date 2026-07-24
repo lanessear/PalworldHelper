@@ -1,0 +1,54 @@
+<Window x:Class="PalworldHelper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PalworldHelper Quickstart" Height="760" Width="1050" MinHeight="650" MinWidth="900" WindowStartupLocation="CenterScreen">
+  <Grid Margin="22">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,16">
+      <TextBlock Text="PalworldHelper" FontSize="34" FontWeight="Bold"/>
+      <TextBlock Text="Sofort benutzbare Schnellversion: Serverprofil, SFTP-Download und Zuchtketten." Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
+    </StackPanel>
+    <TabControl Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}">
+      <TabItem Header="Server">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="20"><Grid.ColumnDefinitions><ColumnDefinition Width="280"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="Serverprofile" FontSize="20" FontWeight="SemiBold"/>
+            <ListBox x:Name="ProfilesList" Height="360" Margin="0,12,0,8" SelectionChanged="ProfilesList_SelectionChanged" DisplayMemberPath="Name"/>
+            <WrapPanel><Button Content="Neu" Click="NewProfile_Click"/><Button Content="Löschen" Click="DeleteProfile_Click" Background="#FF8796"/></WrapPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Text="Verbindungsdaten" FontSize="20" FontWeight="SemiBold"/>
+            <Label Content="Profilname"/><TextBox x:Name="ProfileName"/>
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/></Grid.ColumnDefinitions>
+              <StackPanel><Label Content="Host / IP"/><TextBox x:Name="Host"/></StackPanel>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0"><Label Content="SSH-Port"/><TextBox x:Name="Port" Text="22"/></StackPanel>
+            </Grid>
+            <Label Content="Benutzername"/><TextBox x:Name="Username"/>
+            <Label Content="Anmeldung"/><ComboBox x:Name="Authentication" SelectionChanged="Authentication_SelectionChanged"><ComboBoxItem Content="Passwort" IsSelected="True"/><ComboBoxItem Content="SSH-Key"/></ComboBox>
+            <StackPanel x:Name="PasswordPanel"><Label Content="Passwort (lokal mit Windows DPAPI verschlüsselt)"/><PasswordBox x:Name="Password"/></StackPanel>
+            <StackPanel x:Name="KeyPanel" Visibility="Collapsed"><Label Content="Pfad zum privaten SSH-Key"/><DockPanel><Button DockPanel.Dock="Right" Content="…" Margin="8,0,0,0" Click="PickKey_Click"/><TextBox x:Name="PrivateKeyPath"/></DockPanel></StackPanel>
+            <Label Content="Vollständiger Remote-Pfad zur Level.sav"/><TextBox x:Name="RemoteSavePath" ToolTip="z. B. /opt/palworld/Pal/Saved/SaveGames/0/WELT-ID/Level.sav"/>
+            <Label Content="Spielername"/><TextBox x:Name="PlayerName" Text="Lanessear"/>
+            <WrapPanel Margin="0,10,0,0"><Button Content="Speichern" Click="SaveProfile_Click"/><Button Content="Verbindung testen" Click="TestConnection_Click"/><Button Content="Save herunterladen" Click="DownloadSave_Click"/></WrapPanel>
+            <TextBlock x:Name="ServerStatus" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Margin="0,12,0,0"/>
+          </StackPanel>
+        </Grid></ScrollViewer>
+      </TabItem>
+      <TabItem Header="Zuchtkette">
+        <Grid Margin="20"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <StackPanel><TextBlock Text="Zuchtdaten" FontSize="20" FontWeight="SemiBold"/><DockPanel Margin="0,10,0,0"><Button DockPanel.Dock="Right" Content="JSON auswählen" Margin="8,0,0,0" Click="PickBreedingJson_Click"/><TextBox x:Name="BreedingJsonPath" IsReadOnly="True"/></DockPanel><TextBlock x:Name="BreedingStatus" Foreground="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel>
+          <Grid Grid.Row="1" Margin="0,20,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel><Label Content="Vorhandenes Start-Pal"/><ComboBox x:Name="StartPal" IsEditable="True" IsTextSearchEnabled="True"/></StackPanel>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0"><Label Content="Gewünschtes Ziel-Pal"/><ComboBox x:Name="TargetPal" IsEditable="True" IsTextSearchEnabled="True"/></StackPanel>
+            <Button Grid.Column="2" Content="Kürzeste Kette suchen" VerticalAlignment="Bottom" Margin="14,0,0,0" Click="FindPath_Click"/>
+          </Grid>
+          <ListBox Grid.Row="2" x:Name="ResultList" Background="#0A1020" Foreground="{StaticResource Text}" BorderBrush="{StaticResource Border}" FontSize="16" Padding="10"/>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Collection (als Nächstes)">
+        <StackPanel Margin="24"><TextBlock Text="Savegame ist herunterladbar." FontSize="22" FontWeight="SemiBold"/><TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Text="Das direkte Parsen der Level.sav ist in diesem Quickstart noch nicht enthalten. Die nächste Ausbaustufe liest daraus Spieler und Pals ein. Der Downloadpfad wird nach jedem Abruf angezeigt, damit wir direkt mit einem echten Save testen können."/></StackPanel>
+      </TabItem>
+    </TabControl>
+    <TextBlock Grid.Row="2" Margin="0,12,0,0" Foreground="{StaticResource Muted}" Text="Quickstart v0.1 – Einstellungen liegen unter %LOCALAPPDATA%\PalworldHelper"/>
+  </Grid>
+</Window>
