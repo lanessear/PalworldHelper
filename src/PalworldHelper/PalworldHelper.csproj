@@ -10,6 +10,6 @@
     <ApplicationIcon />
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    <PackageReference Include="SSH.NET" />
   </ItemGroup>
 </Project>
