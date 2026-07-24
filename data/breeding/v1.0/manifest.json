@@ -1,0 +1,20 @@
+{
+  "dataset": "Palworld breeding results",
+  "version": "1.0",
+  "date": "2026-07-24",
+  "status": "current",
+  "source": "IndexedDB export",
+  "sourceRows": 44551,
+  "uniqueBreedingResults": 44551,
+  "successfulResults": 44551,
+  "failedResults": 0,
+  "palNames": 387,
+  "sourceFile": "palworld_breeding_results_indexeddb.json",
+  "repositoryFile": "palworld_breeding_results_v1.0_2026-07-24.compact.json",
+  "sourceSha256": "95919a21ec5472c8dea8135a78fc7e660bfdae6e8e257886b61ade6f49e94dde",
+  "repositoryFileSha256": "6145286b7b55d7111fddc6217c054426e012e3646f6bb14c55d7ff67fb835e62",
+  "encoding": {
+    "schemaVersion": 2,
+    "description": "Pal names are stored once in names. Each results entry contains three zero-based indexes: parent1, parent2, child."
+  }
+}
