@@ -15,7 +15,7 @@
 
     <StackPanel Grid.Row="1" Margin="0,0,0,16">
       <TextBlock Text="PalworldHelper" FontSize="34" FontWeight="Bold"/>
-      <TextBlock Text="Native Windows quickstart with server profiles, SFTP save download, and breeding chains." Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
+      <TextBlock Text="Native Windows quickstart with server profiles, SFTP save download, local save import, and breeding chains." Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
     </StackPanel>
 
     <TabControl Grid.Row="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}">
@@ -59,10 +59,28 @@
           <ListBox Grid.Row="2" x:Name="ResultList" Background="{StaticResource Panel}" Foreground="{StaticResource Text}" BorderBrush="{StaticResource Border}" FontSize="16" Padding="10"/>
         </Grid>
       </TabItem>
-      <TabItem Header="Collection (Next)">
-        <StackPanel Margin="24"><TextBlock Text="The save file can already be downloaded." FontSize="22" FontWeight="SemiBold"/><TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Text="Direct parsing of Level.sav is not included yet. The next development step will import players, owned Pals, and passive skills from a real server save."/></StackPanel>
+      <TabItem Header="Save Data">
+        <Grid Margin="20">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <StackPanel>
+            <TextBlock Text="Local save import" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Text="Select a Level.sav manually when no server access is available. The file remains local and is only read by this application."/>
+            <DockPanel Margin="0,12,0,0">
+              <Button DockPanel.Dock="Right" Content="Select .sav" Margin="8,0,0,0" Click="PickLocalSave_Click"/>
+              <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
+            </DockPanel>
+            <TextBlock x:Name="SaveStatus" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+          </StackPanel>
+          <Grid Grid.Row="1" Margin="0,18,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <GroupBox Header="File information" Margin="0,0,8,0"><TextBox x:Name="SaveMetadata" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MinHeight="150" Padding="8" FontFamily="Consolas"/></GroupBox>
+            <GroupBox Header="Header / hex preview" Grid.Column="1" Margin="8,0,0,0"><TextBox x:Name="SaveHexPreview" IsReadOnly="True" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MinHeight="150" Padding="8" FontFamily="Consolas"/></GroupBox>
+          </Grid>
+          <GroupBox Grid.Row="2" Header="Readable strings found in the save">
+            <TextBox x:Name="SaveStrings" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="8" FontFamily="Consolas"/>
+          </GroupBox>
+        </Grid>
       </TabItem>
     </TabControl>
-    <TextBlock Grid.Row="3" Margin="0,12,0,0" Foreground="{StaticResource Muted}" Text="Quickstart v0.2 · Settings are stored under %LOCALAPPDATA%\PalworldHelper"/>
+    <TextBlock Grid.Row="3" Margin="0,12,0,0" Foreground="{StaticResource Muted}" Text="Quickstart v0.3 · Settings are stored under %LOCALAPPDATA%\PalworldHelper"/>
   </Grid>
 </Window>
