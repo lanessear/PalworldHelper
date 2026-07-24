@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "gameVersion": "example-only",
+  "generatedAtUtc": "2026-07-24T00:00:00Z",
+  "recipes": [
+    {
+      "parentA": "Example Pal A",
+      "parentB": "Example Pal B",
+      "child": "Example Child"
+    }
+  ]
+}

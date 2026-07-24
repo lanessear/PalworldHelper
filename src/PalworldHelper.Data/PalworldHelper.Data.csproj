@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>SQLite persistence for PalworldHelper.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PalworldHelper.Core\PalworldHelper.Core.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+</Project>

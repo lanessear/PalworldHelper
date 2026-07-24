@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Stable plugin contracts for PalworldHelper extensions.</Description>
+  </PropertyGroup>
+</Project>

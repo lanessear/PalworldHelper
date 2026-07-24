@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Dedicated-server save acquisition and conversion integrations.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PalworldHelper.Core\PalworldHelper.Core.csproj" />
+    <PackageReference Include="SSH.NET" />
+  </ItemGroup>
+</Project>

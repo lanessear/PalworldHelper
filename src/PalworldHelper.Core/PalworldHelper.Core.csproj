@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Domain model and application contracts for PalworldHelper.</Description>
+  </PropertyGroup>
+</Project>

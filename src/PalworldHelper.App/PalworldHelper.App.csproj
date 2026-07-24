@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>PalworldHelper</AssemblyName>
+    <RootNamespace>PalworldHelper.App</RootNamespace>
+    <Description>Local-first Palworld collection and breeding planner.</Description>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PalworldHelper.Core\PalworldHelper.Core.csproj" />
+    <ProjectReference Include="..\PalworldHelper.Data\PalworldHelper.Data.csproj" />
+    <ProjectReference Include="..\PalworldHelper.SaveImport\PalworldHelper.SaveImport.csproj" />
+    <ProjectReference Include="..\PalworldHelper.Plugins.Abstractions\PalworldHelper.Plugins.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
