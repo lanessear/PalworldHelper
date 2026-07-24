@@ -5,6 +5,10 @@ namespace PalworldHelper;
 
 public sealed class BreedingService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
     private readonly Dictionary<string, string> _names = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<(string mate, string child)>> _graph = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyList<string> Names => _names.Values.OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -13,7 +17,7 @@ public sealed class BreedingService
     public void Load(string path)
     {
         var json = File.ReadAllText(path);
-        var payload = JsonSerializer.Deserialize<BreedingPayload>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+        var payload = JsonSerializer.Deserialize<BreedingPayload>(json,JsonOptions)
             ?? throw new InvalidDataException("JSON konnte nicht gelesen werden.");
         _names.Clear(); _graph.Clear(); ResultCount = 0;
         foreach (var r in payload.Results)

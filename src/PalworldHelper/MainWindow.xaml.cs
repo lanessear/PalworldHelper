@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
+using System.Globalization;
 using System.IO;
 
 namespace PalworldHelper;
@@ -8,7 +9,6 @@ namespace PalworldHelper;
 public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService = new();
-    private readonly SftpService _sftp = new();
     private readonly BreedingService _breeding = new();
     private AppSettings _settings;
     private ServerProfile? _current;
@@ -35,7 +35,7 @@ public partial class MainWindow : Window
 
     private void LoadProfile(ServerProfile p)
     {
-        _current = p; ProfileName.Text = p.Name; Host.Text = p.Host; Port.Text = p.Port.ToString(); Username.Text = p.Username;
+        _current = p; ProfileName.Text = p.Name; Host.Text = p.Host; Port.Text = p.Port.ToString(CultureInfo.InvariantCulture); Username.Text = p.Username;
         RemoteSavePath.Text = p.RemoteSavePath; PlayerName.Text = p.PlayerName; PrivateKeyPath.Text = p.PrivateKeyPath;
         Authentication.SelectedIndex = p.Authentication == "SSH-Key" ? 1 : 0; Password.Password = SettingsService.Unprotect(p.EncryptedPassword);
     }
@@ -68,12 +68,12 @@ public partial class MainWindow : Window
 
     private async void TestConnection_Click(object sender, RoutedEventArgs e)
     {
-        try { ServerStatus.Text = "Teste Verbindung …"; await _sftp.TestAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ SFTP-Verbindung erfolgreich."; }
+        try { ServerStatus.Text = "Teste Verbindung …"; await SftpService.TestAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ SFTP-Verbindung erfolgreich."; }
         catch (Exception ex) { ServerStatus.Text = "✗ " + ex.Message; }
     }
     private async void DownloadSave_Click(object sender, RoutedEventArgs e)
     {
-        try { ServerStatus.Text = "Lade Level.sav herunter …"; var path = await _sftp.DownloadSaveAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ Save heruntergeladen:\n" + path; }
+        try { ServerStatus.Text = "Lade Level.sav herunter …"; var path = await SftpService.DownloadSaveAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ Save heruntergeladen:\n" + path; }
         catch (Exception ex) { ServerStatus.Text = "✗ " + ex.Message; }
     }
 

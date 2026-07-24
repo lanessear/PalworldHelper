@@ -15,7 +15,7 @@ public sealed class SftpService
         return new ConnectionInfo(p.Host, p.Port, p.Username, new PasswordAuthenticationMethod(p.Username, password));
     }
 
-    public Task TestAsync(ServerProfile p, string password) => Task.Run(() =>
+    public static Task TestAsync(ServerProfile p, string password) => Task.Run(() =>
     {
         using var client = new SftpClient(BuildConnection(p, password));
         client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(10);
@@ -23,7 +23,7 @@ public sealed class SftpService
         client.Disconnect();
     });
 
-    public Task<string> DownloadSaveAsync(ServerProfile p, string password) => Task.Run(() =>
+    public static Task<string> DownloadSaveAsync(ServerProfile p, string password) => Task.Run(() =>
     {
         if (string.IsNullOrWhiteSpace(p.RemoteSavePath)) throw new InvalidOperationException("Bitte den vollständigen Remote-Pfad zur Level.sav eintragen.");
         var targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PalworldHelper", "saves", p.Id);
