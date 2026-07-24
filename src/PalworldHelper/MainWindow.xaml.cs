@@ -100,8 +100,52 @@ public partial class MainWindow : Window
 
     private async void DownloadSave_Click(object sender, RoutedEventArgs e)
     {
-        try { ServerStatus.Text = "Downloading Level.sav …"; var path = await SftpService.DownloadSaveAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ Save file downloaded:\n" + path; }
+        try
+        {
+            ServerStatus.Text = "Downloading Level.sav …";
+            var path = await SftpService.DownloadSaveAsync(RequireProfile(), Password.Password);
+            ServerStatus.Text = "✓ Save file downloaded:\n" + path;
+            await InspectSaveAsync(path);
+        }
         catch (Exception ex) { ServerStatus.Text = "✗ " + ex.Message; }
+    }
+
+    private async void PickLocalSave_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Select a Palworld save file",
+            Filter = "Palworld save files|*.sav|All files|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            await InspectSaveAsync(dialog.FileName);
+        }
+    }
+
+    private async Task InspectSaveAsync(string path)
+    {
+        try
+        {
+            LocalSavePath.Text = path;
+            SaveStatus.Text = "Reading save file …";
+            SaveMetadata.Text = string.Empty;
+            SaveHexPreview.Text = string.Empty;
+            SaveStrings.Text = string.Empty;
+
+            var result = await SaveInspectionService.InspectAsync(path);
+            SaveMetadata.Text = result.Metadata;
+            SaveHexPreview.Text = result.HexPreview;
+            SaveStrings.Text = result.ReadableStrings;
+            SaveStatus.Text = "✓ Save file loaded. Raw file data is shown below.";
+        }
+        catch (Exception ex)
+        {
+            SaveStatus.Text = "✗ " + ex.Message;
+        }
     }
 
     private void PickBreedingJson_Click(object sender, RoutedEventArgs e)
