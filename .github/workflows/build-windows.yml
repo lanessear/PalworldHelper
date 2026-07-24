@@ -46,22 +46,35 @@ jobs:
       - name: Build save parser helper
         run: python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz tools/save_parser/palworld_save_parser.py
 
+      - name: Embed parser in PalworldHelper
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force src/PalworldHelper/Embedded | Out-Null
+          Copy-Item dist/PalworldSaveParser.exe src/PalworldHelper/Embedded/PalworldSaveParser.exe
+
       - name: Restore dependencies
         run: dotnet restore PalworldHelper.sln
 
       - name: Build solution
         run: dotnet build PalworldHelper.sln --configuration Release --no-restore
 
-      - name: Publish self-contained Windows executable
+      - name: Publish single self-contained Windows executable
         run: dotnet publish src/PalworldHelper/PalworldHelper.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish
 
-      - name: Add parser to release
-        run: Copy-Item dist/PalworldSaveParser.exe publish/PalworldSaveParser.exe
+      - name: Verify single-file release
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem publish -File
+          if ($files.Count -ne 1 -or $files[0].Name -ne 'PalworldHelper.exe') {
+            Write-Host 'Unexpected release files:'
+            $files | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
 
       - name: Upload Windows artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: PalworldHelper-win-x64
-          path: publish/**
+          path: publish/PalworldHelper.exe
           if-no-files-found: error
