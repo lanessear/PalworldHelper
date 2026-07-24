@@ -12,4 +12,7 @@
   <ItemGroup>
     <PackageReference Include="SSH.NET" />
   </ItemGroup>
+  <ItemGroup Condition="Exists('Embedded/PalworldSaveParser.exe')">
+    <EmbeddedResource Include="Embedded/PalworldSaveParser.exe" LogicalName="PalworldHelper.Embedded.PalworldSaveParser.exe" />
+  </ItemGroup>
 </Project>
