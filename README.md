@@ -1,47 +1,73 @@
-# PalworldHelper Quickstart v0.2
+<div align="center">
 
-**THIS PROJECT IS MANAGED BY AI.**
+# PalworldHelper
 
-Eine bewusst kleine, native Windows-Desktop-App ohne Browser. Die Anwendung wird als eigenständige Windows-EXE gebaut; auf dem Zielrechner muss weder Python noch das .NET SDK installiert sein.
+<table>
+<tr>
+<td align="center" bgcolor="#8B0000">
 
-## Bereits funktionsfähig
+# ⚠️ THIS PROJECT IS CREATED BY AI ⚠️
 
-- beliebig viele Serverprofile
-- Anmeldung per Passwort oder SSH-Key
-- SFTP-Verbindung testen
-- `Level.sav` automatisch auf dem Palworld-Server suchen
-- alternativ einen frei einstellbaren Remote-Pfad verwenden
-- `Level.sav` per SFTP herunterladen
-- Zugangspasswort mit Windows DPAPI für den aktuellen Windows-Benutzer verschlüsseln
-- vorhandene `palworld_breeding_results.json` laden
-- Start- und Ziel-Pal über durchsuchbare Dropdown-Menüs auswählen
-- kürzeste fortlaufende Zuchtkette per Breitensuche berechnen
+## AI designs, writes, documents, tests, and maintains this project.
 
-## Nächster Entwicklungsschritt
+### The human owner reviews the results and gives final approval.
 
-Die heruntergeladene `Level.sav` wird noch nicht direkt in Spieler, vorhandene Pals und passive Fähigkeiten zerlegt. Der Download und die automatische Save-Suche sind bereits eingebaut, damit als Nächstes der Import eines echten Server-Saves umgesetzt und getestet werden kann.
+**This is not presented as a human-developed software project.**
 
-## Windows-EXE herunterladen
+</td>
+</tr>
+</table>
 
-Bei jedem Commit auf `main` baut GitHub Actions automatisch eine neue self-contained Windows-Version:
+**Quickstart v0.2 · Native Windows desktop application**
 
-1. Auf GitHub **Actions → Build Windows EXE** öffnen.
-2. Den neuesten erfolgreichen Lauf auswählen.
-3. Unten das Artefakt `PalworldHelper-win-x64` herunterladen.
-4. ZIP entpacken und `PalworldHelper.exe` starten.
+</div>
 
-Alternativ kann der Workflow über **Run workflow** manuell gestartet werden.
+## Project model
 
-## Zuchtdaten
+PalworldHelper is an explicitly AI-created project. Architecture, implementation, user interface, documentation, maintenance, and future development are produced by AI. The human project owner defines goals, provides real-world requirements and test data, reviews the generated work, and approves or rejects changes.
 
-Beim ersten Start über **Zuchtkette → JSON auswählen** deine Datei `palworld_breeding_results.json` auswählen. Alternativ kann sie direkt neben `PalworldHelper.exe` liegen.
+Human approval does not imply human authorship of the implementation.
 
-## Lokale Entwicklung
+## Current features
 
-Mit installiertem .NET-8-SDK:
+- Manage any number of Palworld server profiles
+- Authenticate with a password or SSH private key
+- Test SFTP connectivity
+- Automatically search the server for `Level.sav`
+- Optionally use a manually configured remote save path
+- Download `Level.sav` over SFTP
+- Encrypt saved passwords with Windows DPAPI for the current Windows user
+- Load an existing `palworld_breeding_results.json` file
+- Select source and target Pals with searchable dropdowns
+- Calculate the shortest continuous breeding chain with breadth-first search
+
+## Next development step
+
+The downloaded `Level.sav` is not yet parsed into players, owned Pals, and passive skills. Save download and automatic discovery are already implemented so the next step can focus on importing and testing a real dedicated-server save.
+
+## Download the Windows executable
+
+Every commit to `main` automatically triggers a self-contained Windows build through GitHub Actions:
+
+1. Open **Actions → Build Windows EXE**.
+2. Select the newest successful workflow run.
+3. Download the `PalworldHelper-win-x64` artifact.
+4. Extract the ZIP file and start `PalworldHelper.exe`.
+
+The workflow can also be started manually with **Run workflow**.
+
+Neither Python nor the .NET SDK is required on the target computer.
+
+## Breeding data
+
+On first launch, open **Breeding Chain → Select JSON** and choose `palworld_breeding_results.json`. Alternatively, place the file next to `PalworldHelper.exe`.
+
+## Local development
+
+With the .NET 8 SDK installed:
 
 ```powershell
 .\build-windows.ps1
 ```
 
-Die fertige EXE liegt anschließend unter `publish\PalworldHelper.exe`.
+The resulting executable is written to `publish\PalworldHelper.exe`.
