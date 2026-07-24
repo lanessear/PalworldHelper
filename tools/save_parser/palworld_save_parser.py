@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse,json,os,sys
 from typing import Any
-from palworld_save_tools.gvas import GvasFile
-from palworld_save_tools.palsav import decompress_sav_to_gvas
-from palworld_save_tools.paltypes import PALWORLD_CUSTOM_PROPERTIES,PALWORLD_TYPE_HINTS
+from palsav.core import decompress_sav_to_gvas
+from palsav.gvas import GvasFile
+from palsav.paltypes import PALWORLD_CUSTOM_PROPERTIES,PALWORLD_TYPE_HINTS
 
 def find(node:Any,key:str):
     if isinstance(node,dict):
@@ -75,8 +75,13 @@ def main():
     names={c['playerUid']:(c['name'] or c['playerUid'] or 'Unknown player') for c in chars if c['isPlayer']}
     players=[{'name':names.get(c['playerUid'],'Unknown player'),'playerUid':c['playerUid'],'level':c['level']} for c in chars if c['isPlayer']]
     pals=[{'owner':names.get(c['ownerPlayerUid'],c['ownerPlayerUid'] or 'World / base'),'ownerPlayerUid':c['ownerPlayerUid'],'species':c['species'],'nickname':c['name'],'level':c['level'],'gender':c['gender'],'passiveSkills':c['passiveSkills'],'instanceId':c['instanceId']} for c in chars if not c['isPlayer']]
-    result={'parser':'palworld-save-tools','saveType':save_type,'playerCount':len(players),'palCount':len(pals),'players':players,'pals':pals}
+    result={'parser':'palsav-flex','saveType':save_type,'playerCount':len(players),'palCount':len(pals),'players':players,'pals':pals}
     with open(a.output,'w',encoding='utf-8') as f:json.dump(result,f,ensure_ascii=False,separators=(',',':'))
 if __name__=='__main__':
     try:main()
-    except Exception as e:print(f'Parser error: {e}',file=sys.stderr);raise
+    except Exception as e:
+        message=str(e)
+        if "instead of b'PlZ'" in message or "instead of b'PLZ'" in message:
+            message += "\nThis save uses Palworld's newer Oodle-compressed format. Please install the latest PalworldHelper build."
+        print(f'Parser error: {message}',file=sys.stderr)
+        sys.exit(1)
