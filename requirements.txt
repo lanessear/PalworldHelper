@@ -1,3 +1,0 @@
-Flask
-paramiko
-palworld-save-tools
