@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -24,14 +25,14 @@ public static class SaveInspectionService
 
         var parsed = await SaveParserService.ParseAsync(path).ConfigureAwait(false);
         var metadata = new StringBuilder()
-            .AppendLine($"Name: {info.Name}")
-            .AppendLine($"Full path: {info.FullName}")
-            .AppendLine($"Size: {info.Length.ToString("N0", CultureInfo.CurrentCulture)} bytes ({FormatBytes(info.Length)})")
-            .AppendLine($"Last modified: {info.LastWriteTime:yyyy-MM-dd HH:mm:ss}")
-            .AppendLine($"SHA-256: {Convert.ToHexString(hash).ToLowerInvariant()}")
-            .AppendLine($"Parser: {parsed.Parser}")
-            .AppendLine($"Players: {parsed.PlayerCount.ToString("N0", CultureInfo.CurrentCulture)}")
-            .AppendLine($"Pals: {parsed.PalCount.ToString("N0", CultureInfo.CurrentCulture)}")
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Name: {info.Name}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Full path: {info.FullName}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Size: {info.Length:N0} bytes ({FormatBytes(info.Length)})"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Last modified: {info.LastWriteTime:yyyy-MM-dd HH:mm:ss}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"SHA-256: {Convert.ToHexString(hash).ToLowerInvariant()}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Parser: {parsed.Parser}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Players: {parsed.PlayerCount:N0}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Pals: {parsed.PalCount:N0}"))
             .ToString();
 
         return new SaveInspectionResult(metadata, BuildHexPreview(preview.AsSpan(0, totalRead)), FormatParsedData(parsed));
@@ -42,7 +43,7 @@ public static class SaveInspectionService
         var output = new StringBuilder().AppendLine("PLAYERS").AppendLine(new string('=', 80));
         foreach (var player in save.Players.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
         {
-            output.AppendLine($"{player.Name} | Level {player.Level} | UID {player.PlayerUid}");
+            output.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{player.Name} | Level {player.Level} | UID {player.PlayerUid}"));
         }
 
         output.AppendLine().AppendLine("PALS").AppendLine(new string('=', 80));
@@ -50,7 +51,7 @@ public static class SaveInspectionService
         {
             var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
             var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
-            output.AppendLine($"{pal.Owner}: {pal.Species}{nickname} | Level {pal.Level} | {pal.Gender} | {passives}");
+            output.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{pal.Owner}: {pal.Species}{nickname} | Level {pal.Level} | {pal.Gender} | {passives}"));
         }
         return output.ToString();
     }
@@ -77,6 +78,6 @@ public static class SaveInspectionService
         var size = (double)bytes;
         var unit = 0;
         while (size >= 1024 && unit < units.Length - 1) { size /= 1024; unit++; }
-        return $"{size:0.##} {units[unit]}";
+        return string.Create(CultureInfo.InvariantCulture, $"{size:0.##} {units[unit]}");
     }
 }
