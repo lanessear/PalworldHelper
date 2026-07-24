@@ -1,8 +1,8 @@
 using Microsoft.Win32;
-using System.Windows;
-using System.Windows.Controls;
 using System.Globalization;
 using System.IO;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace PalworldHelper;
 
@@ -71,6 +71,33 @@ public partial class MainWindow : Window
         try { ServerStatus.Text = "Teste Verbindung …"; await SftpService.TestAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ SFTP-Verbindung erfolgreich."; }
         catch (Exception ex) { ServerStatus.Text = "✗ " + ex.Message; }
     }
+    private async void FindRemoteSave_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ServerStatus.Text = "Suche auf dem Server nach Level.sav …";
+            var profile = RequireProfile();
+            var candidates = await SftpService.FindSaveFilesAsync(profile, Password.Password);
+
+            if (candidates.Count == 0)
+            {
+                ServerStatus.Text = "✗ Keine Level.sav gefunden. Bitte den Pfad manuell eintragen.";
+                return;
+            }
+
+            var selected = candidates[0];
+            RemoteSavePath.Text = selected.Path;
+            profile.RemoteSavePath = selected.Path;
+            ServerStatus.Text = candidates.Count == 1
+                ? $"✓ Save automatisch gefunden:\n{selected.Path}"
+                : $"✓ {candidates.Count} Saves gefunden. Das zuletzt geänderte wurde ausgewählt:\n{selected.Path}";
+        }
+        catch (Exception ex)
+        {
+            ServerStatus.Text = "✗ " + ex.Message;
+        }
+    }
+
     private async void DownloadSave_Click(object sender, RoutedEventArgs e)
     {
         try { ServerStatus.Text = "Lade Level.sav herunter …"; var path = await SftpService.DownloadSaveAsync(RequireProfile(), Password.Password); ServerStatus.Text = "✓ Save heruntergeladen:\n" + path; }

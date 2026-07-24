@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.IO;
+using System.Text.Json;
 
 namespace PalworldHelper;
 
@@ -17,7 +17,7 @@ public sealed class BreedingService
     public void Load(string path)
     {
         var json = File.ReadAllText(path);
-        var payload = JsonSerializer.Deserialize<BreedingPayload>(json,JsonOptions)
+        var payload = JsonSerializer.Deserialize<BreedingPayload>(json, JsonOptions)
             ?? throw new InvalidDataException("JSON konnte nicht gelesen werden.");
         _names.Clear(); _graph.Clear(); ResultCount = 0;
         foreach (var r in payload.Results)
