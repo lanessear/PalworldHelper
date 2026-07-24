@@ -36,6 +36,8 @@ public sealed class ParsedPal
 
 public static class SaveParserService
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = true };
+
     public static async Task<ParsedSave> ParseAsync(string savePath)
     {
         var parserPath = Path.Combine(AppContext.BaseDirectory, "PalworldSaveParser.exe");
@@ -70,10 +72,8 @@ public static class SaveParserService
             }
 
             await using var input = File.OpenRead(outputPath);
-            return await JsonSerializer.DeserializeAsync<ParsedSave>(input, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }).ConfigureAwait(false) ?? throw new InvalidDataException("The parser returned no save data.");
+            return await JsonSerializer.DeserializeAsync<ParsedSave>(input, SerializerOptions).ConfigureAwait(false)
+                ?? throw new InvalidDataException("The parser returned no save data.");
         }
         finally
         {
