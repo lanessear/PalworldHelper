@@ -1,22 +1,48 @@
 name: Build Windows EXE
+
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 permissions:
   contents: read
+
+concurrency:
+  group: build-windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build Windows EXE
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet restore PalworldHelper.sln
-      - name: Publish single EXE
-        run: dotnet publish src/PalworldHelper/PalworldHelper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
-      - uses: actions/upload-artifact@v4
+
+      - name: Restore dependencies
+        run: dotnet restore PalworldHelper.sln
+
+      - name: Build solution
+        run: dotnet build PalworldHelper.sln --configuration Release --no-restore
+
+      - name: Publish self-contained Windows executable
+        run: dotnet publish src/PalworldHelper/PalworldHelper.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish
+
+      - name: Upload Windows artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
           name: PalworldHelper-win-x64
           path: publish/**
+          if-no-files-found: error
