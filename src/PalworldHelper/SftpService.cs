@@ -1,4 +1,5 @@
 using Renci.SshNet;
+using Renci.SshNet.Common;
 using Renci.SshNet.Sftp;
 using System.IO;
 
@@ -20,11 +21,12 @@ public sealed class SftpService
 
     private static ConnectionInfo BuildConnection(ServerProfile p, string password)
     {
-        if (string.Equals(p.Authentication, "SSH-Key", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(p.Authentication, "SSH-Key", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(p.Authentication, "SSH key", StringComparison.OrdinalIgnoreCase))
         {
             if (!File.Exists(p.PrivateKeyPath))
             {
-                throw new FileNotFoundException("SSH-Key wurde nicht gefunden.", p.PrivateKeyPath);
+                throw new FileNotFoundException("The SSH key could not be found.", p.PrivateKeyPath);
             }
 
             return new ConnectionInfo(
@@ -79,12 +81,12 @@ public sealed class SftpService
         if (string.IsNullOrWhiteSpace(remotePath))
         {
             var candidates = await FindSaveFilesAsync(p, password).ConfigureAwait(false);
-            remotePath = candidates.FirstOrDefault()?.Path;
+            remotePath = candidates.Count > 0 ? candidates[0].Path : null;
 
             if (string.IsNullOrWhiteSpace(remotePath))
             {
                 throw new FileNotFoundException(
-                    "Auf dem Server wurde keine Level.sav gefunden. Bitte den Pfad manuell eintragen.");
+                    "No Level.sav file was found on the server. Enter the path manually.");
             }
         }
 
@@ -107,7 +109,7 @@ public sealed class SftpService
 
         if (!client.Exists(remotePath))
         {
-            throw new FileNotFoundException("Die angegebene Level.sav existiert auf dem Server nicht.", remotePath);
+            throw new FileNotFoundException("The specified Level.sav file does not exist on the server.", remotePath);
         }
 
         using var output = File.Create(target);
@@ -124,7 +126,7 @@ public sealed class SftpService
         return client;
     }
 
-    private static IReadOnlyList<string> BuildSearchRoots(SftpClient client)
+    private static List<string> BuildSearchRoots(SftpClient client)
     {
         var roots = new List<string>();
 
@@ -137,7 +139,7 @@ public sealed class SftpService
         return roots.Distinct(StringComparer.Ordinal).ToList();
     }
 
-    private static void AddRootIfAvailable(SftpClient client, ICollection<string> roots, string root)
+    private static void AddRootIfAvailable(SftpClient client, List<string> roots, string root)
     {
         try
         {
@@ -148,7 +150,7 @@ public sealed class SftpService
         }
         catch (SshException)
         {
-            // Der Benutzer hat auf diesen üblichen Suchpfad möglicherweise keinen Zugriff.
+            // The configured user may not have permission to access this common search path.
         }
     }
 
