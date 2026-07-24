@@ -42,7 +42,13 @@
             <StackPanel Grid.Column="1" Margin="14,0,0,0"><Label Content="Gewünschtes Ziel-Pal"/><ComboBox x:Name="TargetPal" IsEditable="True" IsTextSearchEnabled="True"/></StackPanel>
             <Button Grid.Column="2" Content="Kürzeste Kette suchen" VerticalAlignment="Bottom" Margin="14,0,0,0" Click="FindPath_Click"/>
           </Grid>
-          <ListBox Grid.Row="2" x:Name="ResultList" Background="#0A1020" Foreground="{StaticResource Text}" BorderBrush="{StaticResource Border}" FontSize="16" Padding="10"/>
+          <ListBox Grid.Row="2"
+            x:Name="ResultList"
+            Background="{StaticResource Panel}"
+            Foreground="{StaticResource Text}"
+            BorderBrush="{StaticResource Border}"
+            FontSize="16"
+            Padding="10"/>
         </Grid>
       </TabItem>
       <TabItem Header="Collection (als Nächstes)">
