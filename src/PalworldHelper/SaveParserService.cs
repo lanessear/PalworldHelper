@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace PalworldHelper;
@@ -36,16 +38,13 @@ public sealed class ParsedPal
 
 public static class SaveParserService
 {
+    private const string ParserResourceName = "PalworldHelper.Embedded.PalworldSaveParser.exe";
     private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly SemaphoreSlim ExtractionLock = new(1, 1);
 
     public static async Task<ParsedSave> ParseAsync(string savePath)
     {
-        var parserPath = Path.Combine(AppContext.BaseDirectory, "PalworldSaveParser.exe");
-        if (!File.Exists(parserPath))
-        {
-            throw new FileNotFoundException("PalworldSaveParser.exe is missing. Download the complete Windows release ZIP, not only PalworldHelper.exe.", parserPath);
-        }
-
+        var parserPath = await EnsureParserExtractedAsync().ConfigureAwait(false);
         var outputPath = Path.Combine(Path.GetTempPath(), $"PalworldHelper-{Guid.NewGuid():N}.json");
         try
         {
@@ -78,6 +77,42 @@ public static class SaveParserService
         finally
         {
             if (File.Exists(outputPath)) File.Delete(outputPath);
+        }
+    }
+
+    private static async Task<string> EnsureParserExtractedAsync()
+    {
+        await ExtractionLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            await using var resource = assembly.GetManifestResourceStream(ParserResourceName)
+                ?? throw new FileNotFoundException("The embedded Palworld save parser is missing. Please download a current PalworldHelper.exe release.");
+
+            using var memory = new MemoryStream();
+            await resource.CopyToAsync(memory).ConfigureAwait(false);
+            var parserBytes = memory.ToArray();
+            var hash = Convert.ToHexString(SHA256.HashData(parserBytes)).ToLowerInvariant()[..16];
+            var runtimeDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PalworldHelper",
+                "runtime",
+                hash);
+            Directory.CreateDirectory(runtimeDirectory);
+
+            var parserPath = Path.Combine(runtimeDirectory, "PalworldSaveParser.exe");
+            if (!File.Exists(parserPath) || new FileInfo(parserPath).Length != parserBytes.LongLength)
+            {
+                var temporaryPath = parserPath + ".tmp";
+                await File.WriteAllBytesAsync(temporaryPath, parserBytes).ConfigureAwait(false);
+                File.Move(temporaryPath, parserPath, true);
+            }
+
+            return parserPath;
+        }
+        finally
+        {
+            ExtractionLock.Release();
         }
     }
 }
