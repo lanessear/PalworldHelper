@@ -10,13 +10,13 @@ public sealed class AppSettings
 public sealed class ServerProfile
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Name { get; set; } = "Mein Server";
+    public string Name { get; set; } = "My Server";
     public string Host { get; set; } = "";
     public int Port { get; set; } = 22;
     public string Username { get; set; } = "";
     public string RemoteSavePath { get; set; } = "";
     public string PlayerName { get; set; } = "Lanessear";
-    public string Authentication { get; set; } = "Passwort";
+    public string Authentication { get; set; } = "Password";
     public string PrivateKeyPath { get; set; } = "";
     public string EncryptedPassword { get; set; } = "";
     public override string ToString() => Name;
