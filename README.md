@@ -1,32 +1,36 @@
-# PalworldHelper Quickstart v0.1
+# PalworldHelper Quickstart v0.2
 
 **THIS PROJECT IS MANAGED BY AI.**
 
-Eine bewusst kleine, native Windows-Desktop-App ohne Browser.
+Eine bewusst kleine, native Windows-Desktop-App ohne Browser. Die Anwendung wird als eigenständige Windows-EXE gebaut; auf dem Zielrechner muss weder Python noch das .NET SDK installiert sein.
 
 ## Bereits funktionsfähig
 
 - beliebig viele Serverprofile
-- Passwort oder SSH-Key
+- Anmeldung per Passwort oder SSH-Key
 - SFTP-Verbindung testen
-- `Level.sav` vom frei einstellbaren Serverpfad herunterladen
+- `Level.sav` automatisch auf dem Palworld-Server suchen
+- alternativ einen frei einstellbaren Remote-Pfad verwenden
+- `Level.sav` per SFTP herunterladen
 - Zugangspasswort mit Windows DPAPI für den aktuellen Windows-Benutzer verschlüsseln
 - vorhandene `palworld_breeding_results.json` laden
+- Start- und Ziel-Pal über durchsuchbare Dropdown-Menüs auswählen
 - kürzeste fortlaufende Zuchtkette per Breitensuche berechnen
 
-## Noch nicht enthalten
+## Nächster Entwicklungsschritt
 
-Die heruntergeladene `Level.sav` wird noch nicht in Spieler und Pals zerlegt. Der Download ist bereits eingebaut, damit als nächster Schritt direkt mit einem echten Save gearbeitet werden kann.
+Die heruntergeladene `Level.sav` wird noch nicht direkt in Spieler, vorhandene Pals und passive Fähigkeiten zerlegt. Der Download und die automatische Save-Suche sind bereits eingebaut, damit als Nächstes der Import eines echten Server-Saves umgesetzt und getestet werden kann.
 
-## EXE über GitHub erzeugen
+## Windows-EXE herunterladen
 
-1. Repository-Inhalt hochladen/ersetzen und committen.
-2. Auf GitHub **Actions → Build Windows EXE** öffnen.
-3. Den automatisch gestarteten Lauf abwarten oder **Run workflow** drücken.
-4. Unten das Artefakt `PalworldHelper-win-x64` herunterladen.
-5. ZIP entpacken und `PalworldHelper.exe` starten.
+Bei jedem Commit auf `main` baut GitHub Actions automatisch eine neue self-contained Windows-Version:
 
-Die EXE ist self-contained; .NET muss auf dem Zielrechner nicht installiert sein.
+1. Auf GitHub **Actions → Build Windows EXE** öffnen.
+2. Den neuesten erfolgreichen Lauf auswählen.
+3. Unten das Artefakt `PalworldHelper-win-x64` herunterladen.
+4. ZIP entpacken und `PalworldHelper.exe` starten.
+
+Alternativ kann der Workflow über **Run workflow** manuell gestartet werden.
 
 ## Zuchtdaten
 
@@ -39,3 +43,5 @@ Mit installiertem .NET-8-SDK:
 ```powershell
 .\build-windows.ps1
 ```
+
+Die fertige EXE liegt anschließend unter `publish\PalworldHelper.exe`.
