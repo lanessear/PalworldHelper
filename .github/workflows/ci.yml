@@ -27,15 +27,24 @@ jobs:
         run: dotnet restore PalworldHelper.sln
 
       - name: Build
-        run: dotnet build PalworldHelper.sln --configuration Release --no-restore
+        shell: pwsh
+        run: |
+          dotnet build PalworldHelper.sln --configuration Release --no-restore *>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Build failed. Compiler errors:"
+            Select-String -Path build.log -Pattern ': error ' | ForEach-Object { $_.Line }
+            exit $LASTEXITCODE
+          }
 
       - name: Test
         run: dotnet test PalworldHelper.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
 
-      - name: Upload test results
+      - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: test-results
-          path: TestResults
+          name: ci-diagnostics
+          path: |
+            build.log
+            TestResults
           if-no-files-found: ignore
