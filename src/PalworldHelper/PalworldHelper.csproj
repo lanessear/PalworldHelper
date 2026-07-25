@@ -16,9 +16,6 @@
     <PackageReference Include="SSH.NET" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Embedded/PalworldSaveParser.exe"
-                      LogicalName="PalworldHelper.Embedded.PalworldSaveParser.exe"
-                      Condition="Exists('Embedded/PalworldSaveParser.exe')" />
     <Content Include="../../palworld_breeding_results.default.json"
              Link="palworld_breeding_results.default.json"
              CopyToOutputDirectory="PreserveNewest"

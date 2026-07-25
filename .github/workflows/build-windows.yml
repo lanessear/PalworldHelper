@@ -51,26 +51,6 @@ jobs:
             throw "Default dataset still contains self-breeding rows."
           }
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Oodle-capable save parser
-        shell: pwsh
-        run: |
-          git clone --depth 1 https://github.com/deafdudecomputers/PalworldSaveTools.git parser-upstream
-          python -m pip install --disable-pip-version-check pyinstaller==6.14.2
-          python -m pip install ./parser-upstream/src/palsav/palooz
-          python -m pip install ./parser-upstream/src/palsav
-
-      - name: Build and embed save parser
-        shell: pwsh
-        run: |
-          python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz tools/save_parser/palworld_save_parser.py
-          New-Item -ItemType Directory -Force src/PalworldHelper/Embedded | Out-Null
-          Copy-Item dist/PalworldSaveParser.exe src/PalworldHelper/Embedded/PalworldSaveParser.exe
-
       - name: Restore dependencies
         run: dotnet restore PalworldHelper.sln
 
