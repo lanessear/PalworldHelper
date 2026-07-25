@@ -32,132 +32,29 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Verify default breeding JSON
+        shell: pwsh
+        run: |
+          $path = Join-Path $PWD 'palworld_breeding_results.default.json'
+          if (-not (Test-Path $path)) {
+            throw "Missing repository file: palworld_breeding_results.default.json"
+          }
+
+          $json = Get-Content $path -Raw | ConvertFrom-Json
+          if ($json.pals.Count -ne 298) {
+            throw "Default dataset contains $($json.pals.Count) Pal names instead of 298."
+          }
+          if ($json.results.Count -ne 44253) {
+            throw "Default dataset contains $($json.results.Count) results instead of 44,253."
+          }
+          if (@($json.results | Where-Object { $_[0] -eq $_[1] }).Count -ne 0) {
+            throw "Default dataset still contains self-breeding rows."
+          }
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Reconstruct Default breeding JSON
-        shell: pwsh
-        run: |
-          $dataDirectory = Join-Path $PWD 'src/PalworldHelper/Embedded/BreedingData'
-          $partPaths = @(1..15 | ForEach-Object { Join-Path $dataDirectory ('part{0:D2}.txt' -f $_) })
-          $missingParts = @($partPaths | Where-Object { -not (Test-Path $_) })
-          if ($missingParts.Count -gt 0) {
-            throw "Missing Default data parts: $($missingParts -join ', ')"
-          }
-
-          $tailPath = Join-Path $dataDirectory 'part09-tail.txt'
-          if (-not (Test-Path $tailPath)) {
-            throw "Missing Default data tail: $tailPath"
-          }
-
-          $builder = [Text.StringBuilder]::new()
-          foreach ($partPath in $partPaths) {
-            $raw = Get-Content $partPath -Raw
-            $clean = [regex]::Replace($raw, '[^A-Za-z0-9+/=]', '')
-            if ([string]::IsNullOrWhiteSpace($clean)) {
-              throw "Default data part '$partPath' contains no Base64 data."
-            }
-            [void]$builder.Append($clean)
-
-            if ([IO.Path]::GetFileName($partPath) -eq 'part09.txt') {
-              $tailRaw = Get-Content $tailPath -Raw
-              $tailClean = [regex]::Replace($tailRaw, '[^A-Za-z0-9+/=]', '')
-              if ([string]::IsNullOrWhiteSpace($tailClean)) {
-                throw "Default data tail '$tailPath' contains no Base64 data."
-              }
-              [void]$builder.Append($tailClean)
-            }
-          }
-
-          $base64 = $builder.ToString()
-          if ($base64.Length -ne 216612) {
-            throw "Combined Base64 payload length is $($base64.Length), expected 216,612."
-          }
-          $firstPadding = $base64.IndexOf('=')
-          if ($firstPadding -ge 0 -and $firstPadding -lt ($base64.Length - 2)) {
-            throw "Default data contains Base64 padding before the end of the combined payload."
-          }
-          if (($base64.Length % 4) -ne 0) {
-            throw "Combined Base64 payload length $($base64.Length) is not divisible by four."
-          }
-
-          try {
-            $compressed = [Convert]::FromBase64String($base64)
-          } catch {
-            throw "Combined Default data is not valid Base64: $($_.Exception.Message)"
-          }
-
-          $compressedHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($compressed)).ToLowerInvariant()
-          if ($compressedHash -ne '8c2fda8d4e49a4e896f74e417edbbd5992f0e573aa417c34ff4fcdcc46f729a8') {
-            throw "Default GZIP SHA-256 mismatch: $compressedHash"
-          }
-
-          $input = [IO.MemoryStream]::new($compressed)
-          $gzip = [IO.Compression.GZipStream]::new($input, [IO.Compression.CompressionMode]::Decompress)
-          $outputPath = Join-Path $PWD 'palworld_breeding_results.default.json'
-          $output = [IO.File]::Create($outputPath)
-          try {
-            $gzip.CopyTo($output)
-          } finally {
-            $output.Dispose(); $gzip.Dispose(); $input.Dispose()
-          }
-
-          $jsonBytes = [IO.File]::ReadAllBytes($outputPath)
-          $jsonHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($jsonBytes)).ToLowerInvariant()
-          if ($jsonHash -ne '0945cd8cf5917631cd33779e42374b506f7dfdc952a6099e7732dfd8f5b20f56') {
-            throw "Default JSON SHA-256 mismatch: $jsonHash"
-          }
-
-          $json = Get-Content $outputPath -Raw | ConvertFrom-Json
-          if ($json.pals.Count -ne 298) {
-            throw "Default dataset contains $($json.pals.Count) Pal names instead of 298."
-          }
-          if ($json.results.Count -ne 44551) {
-            throw "Source Default dataset contains $($json.results.Count) results instead of 44,551."
-          }
-
-          $selfBreedingRows = @($json.results | Where-Object { $_[0] -eq $_[1] })
-          $invalidSelfBreedingRows = @($selfBreedingRows | Where-Object { $_[2] -ne $_[0] })
-          if ($selfBreedingRows.Count -ne 298) {
-            throw "Expected 298 self-breeding rows, found $($selfBreedingRows.Count)."
-          }
-          if ($invalidSelfBreedingRows.Count -gt 0) {
-            throw "Found $($invalidSelfBreedingRows.Count) self-breeding rows where A + A does not produce A."
-          }
-
-          # This optimization applies only to the bundled Default file. Custom JSON files
-          # are loaded by the application exactly as provided by the user.
-          $json.results = @($json.results | Where-Object { $_[0] -ne $_[1] })
-          $json.uniqueBreedingResults = $json.results.Count
-          $json.successfulResults = $json.results.Count
-
-          if ($json.results.Count -ne 44253) {
-            throw "Optimized Default dataset contains $($json.results.Count) results instead of 44,253."
-          }
-          if (@($json.results | Where-Object { $_[0] -eq $_[1] }).Count -ne 0) {
-            throw "Optimized Default dataset still contains self-breeding rows."
-          }
-
-          $childIds = [Collections.Generic.HashSet[int]]::new()
-          foreach ($result in $json.results) {
-            [void]$childIds.Add([int]$result[2])
-          }
-          $unreachablePals = @(
-            0..($json.pals.Count - 1) |
-              Where-Object { -not $childIds.Contains([int]$_) } |
-              ForEach-Object { [string]$json.pals[$_] }
-          )
-          Write-Host "Pals that never occur as a breeding result with different parents ($($unreachablePals.Count)):"
-          $unreachablePals | ForEach-Object { Write-Host "  - $_" }
-
-          $json | ConvertTo-Json -Depth 10 -Compress | Set-Content $outputPath -Encoding utf8NoBOM -NoNewline
-
-          $optimizedJson = Get-Content $outputPath -Raw | ConvertFrom-Json
-          if ($optimizedJson.results.Count -ne 44253) {
-            throw "Written Default dataset contains $($optimizedJson.results.Count) results instead of 44,253."
-          }
 
       - name: Install Oodle-capable save parser
         shell: pwsh
@@ -193,10 +90,11 @@ jobs:
             -p:DebugType=None `
             -p:DebugSymbols=false `
             --output publish
-          Copy-Item palworld_breeding_results.default.json publish/palworld_breeding_results.default.json
+
           $files = @(Get-ChildItem publish -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path publish).Path.Length + 1).Replace('\','/') })
           $files += 'palworldhelper.manifest.json'
           $files | ConvertTo-Json | Set-Content publish/palworldhelper.manifest.json -Encoding utf8
+
           New-Item -ItemType Directory package | Out-Null
           Compress-Archive -Path publish/* -DestinationPath package/PalworldHelper-win-x64.zip -CompressionLevel Optimal
 
