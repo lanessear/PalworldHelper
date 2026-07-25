@@ -43,6 +43,8 @@ Human approval does not imply human authorship of the implementation.
 
 The save parser is currently shipped as a bundled helper in the `parser` folder next to the executable. The long-term goal remains a native C# parser so the helper can eventually disappear.
 
+Third-party parser sources and license notes are tracked in `THIRD-PARTY-NOTICES.md`.
+
 ## Install
 
 Download the latest Windows ZIP from **Actions → Build Windows package** or from a tagged GitHub release, extract it, and start `PalworldHelper.exe`.
