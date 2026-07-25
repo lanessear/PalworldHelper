@@ -1,6 +1,9 @@
 $ErrorActionPreference = 'Stop'
+$parserSource = 'https://github.com/deafdudecomputers/PalworldSaveTools.git'
 Remove-Item parser-upstream, dist, build -Recurse -Force -ErrorAction SilentlyContinue
-git clone --depth 1 https://github.com/deafdudecomputers/PalworldSaveTools.git parser-upstream
+git clone --depth 1 $parserSource parser-upstream
+$parserCommit = git -C parser-upstream rev-parse HEAD
+Write-Host "Parser source: $parserSource@$parserCommit"
 python -m pip install --disable-pip-version-check pyinstaller==6.14.2
 python -m pip install .\parser-upstream\src\palsav\palooz
 python -m pip install .\parser-upstream\src\palsav
