@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private readonly BreedingService _breeding = new();
     private AppSettings _settings;
     private ServerProfile? _current;
+    private ParsedSave? _parsedSave;
 
     public MainWindow()
     {
@@ -218,13 +219,17 @@ public partial class MainWindow : Window
             }
 
             var result = await SaveInspectionService.InspectAsync(path);
+            _parsedSave = result.ParsedSave;
             SaveMetadata.Text = result.Metadata;
             SaveHexPreview.Text = result.HexPreview;
             SaveStrings.Text = result.ReadableStrings;
             SaveStatus.Text = "✓ Save file loaded and parsed. This path will be restored on the next start.";
+            UpdateBreedingAvailabilityStatus();
         }
         catch (Exception ex)
         {
+            _parsedSave = null;
+            UpdateBreedingAvailabilityStatus();
             SaveStatus.Text = "✗ " + ex.Message;
         }
     }
@@ -290,6 +295,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             TargetPal.ItemsSource = _breeding.Names;
             _settings.BreedingJsonPath = path;
             _settingsService.Save(_settings);
+            UpdateBreedingAvailabilityStatus();
         }
         catch (Exception ex)
         {
@@ -300,26 +306,132 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private void FindPath_Click(object sender, RoutedEventArgs e)
     {
         ResultList.Items.Clear();
+        ParentDetails.Text = string.Empty;
         var start = StartPal.Text?.Trim() ?? "";
         var target = TargetPal.Text?.Trim() ?? "";
-        if (string.IsNullOrWhiteSpace(start) || string.IsNullOrWhiteSpace(target))
+        if (string.IsNullOrWhiteSpace(target))
         {
-            ResultList.Items.Add("Select both a source and target Pal.");
+            ResultList.Items.Add("Select a desired child Pal.");
             return;
         }
 
-        var path = _breeding.FindShortest(start, target);
+        IReadOnlyList<BreedingPlanStep>? path;
+        if (!string.IsNullOrWhiteSpace(start))
+        {
+            path = _breeding.FindShortestFromStart(start, target, GetAvailableSpeciesOrNull());
+        }
+        else
+        {
+            path = _breeding.FindShortestFromAvailable(target, GetAvailableSpeciesOrNull());
+        }
+
         if (path is null)
         {
-            ResultList.Items.Add("No breeding chain was found.");
+            ResultList.Items.Add(HasParsedSave
+                ? "No breeding chain was found using the Pals available in the loaded save."
+                : "No breeding chain was found.");
             return;
         }
         if (path.Count == 0)
         {
-            ResultList.Items.Add("Source and target are identical.");
+            ResultList.Items.Add(HasParsedSave
+                ? "You already have this Pal in the loaded save."
+                : "This Pal is available directly because no save restriction is active.");
+            ShowParentChoices(target);
             return;
         }
         for (var i = 0; i < path.Count; i++)
-            ResultList.Items.Add($"{i + 1}.  {path[i].Parent} + {path[i].Mate}  →  {path[i].Child}");
+        {
+            var parentMarker = path[i].ParentOwned ? "owned" : "bred";
+            var mateMarker = path[i].MateOwned ? "owned" : "bred";
+            ResultList.Items.Add($"{i + 1}.  {path[i].Parent} ({parentMarker}) + {path[i].Mate} ({mateMarker})  →  {path[i].Child}");
+        }
+        ShowParentChoices(path[^1].Child);
+    }
+
+    private bool HasParsedSave => _parsedSave is { Pals.Count: > 0 };
+
+    private HashSet<string>? GetAvailableSpeciesOrNull()
+    {
+        if (!HasParsedSave) return null;
+        return _parsedSave!.Pals
+            .Where(pal => !string.IsNullOrWhiteSpace(pal.Species))
+            .Select(pal => pal.Species.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private List<string> DesiredPassives()
+        => (DesiredPassiveSkills.Text ?? string.Empty)
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(skill => !string.IsNullOrWhiteSpace(skill))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private void ResultList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var text = ResultList.SelectedItem?.ToString();
+        if (string.IsNullOrWhiteSpace(text) || !text.Contains('→')) return;
+        ShowParentChoices(text.Split('→').Last().Trim());
+    }
+
+    private void ShowParentChoices(string child)
+    {
+        var desiredPassives = DesiredPassives();
+        var choices = _breeding.GetParentChoices(child);
+        if (choices.Count == 0)
+        {
+            ParentDetails.Text = $"No parent combinations found for {child}.";
+            return;
+        }
+
+        var output = new System.Text.StringBuilder();
+        output.AppendLine(CultureInfo.InvariantCulture, $"Target child: {child}");
+        output.AppendLine(HasParsedSave ? "Loaded save is active: only owned Pals are ranked as available." : "No save is active: all species are treated as available.");
+        output.AppendLine(desiredPassives.Count == 0 ? "Desired passives: none selected" : $"Desired passives: {string.Join(", ", desiredPassives)}");
+        output.AppendLine();
+
+        foreach (var choice in choices.Take(20))
+        {
+            var parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives);
+            var parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives);
+            output.AppendLine(CultureInfo.InvariantCulture, $"{choice.Parent1} + {choice.Parent2}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent1, parent1, desiredPassives)}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent2, parent2, desiredPassives)}");
+            output.AppendLine();
+        }
+
+        ParentDetails.Text = output.ToString();
+    }
+
+    private ParsedPal? GetBestOwnedPal(string species, IReadOnlyList<string> desiredPassives)
+    {
+        if (!HasParsedSave) return null;
+        return _parsedSave!.Pals
+            .Where(pal => pal.Species.Equals(species, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(pal => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)))
+            .ThenByDescending(pal => pal.PassiveSkills.Count)
+            .ThenByDescending(pal => pal.Level)
+            .FirstOrDefault();
+    }
+
+    private static string DescribeParentCandidate(string species, ParsedPal? pal, IReadOnlyList<string> desiredPassives)
+    {
+        if (pal is null)
+            return $"best {species}: no owned candidate in loaded save";
+
+        var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
+        var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
+        var matchText = desiredPassives.Count == 0 ? "" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))}";
+        var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
+        return $"best {species}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
+    }
+
+    private void UpdateBreedingAvailabilityStatus()
+    {
+        if (_breeding.Names.Count == 0) return;
+        var suffix = HasParsedSave
+            ? $" Save restriction active: {_parsedSave!.Pals.Select(p => p.Species).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0} owned species available."
+            : " No save restriction active: all Pals are treated as available.";
+        BreedingStatus.Text = $"✓ Loaded {_breeding.ResultCount:N0} results and {_breeding.Names.Count:N0} Pal names.{suffix}";
     }
 }

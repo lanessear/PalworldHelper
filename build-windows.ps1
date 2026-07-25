@@ -7,7 +7,7 @@ Write-Host "Parser source: $parserSource@$parserCommit"
 python -m pip install --disable-pip-version-check pyinstaller==6.14.2
 python -m pip install .\parser-upstream\src\palsav\palooz
 python -m pip install .\parser-upstream\src\palsav
-python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz .\tools\save_parser\palworld_save_parser.py
+python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz --add-data=".\tools\save_parser\palworld_character_names.json:." .\tools\save_parser\palworld_save_parser.py
 dotnet restore .\PalworldHelper.sln
 dotnet publish .\src\PalworldHelper\PalworldHelper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\publish
 New-Item -ItemType Directory -Force .\publish\parser | Out-Null

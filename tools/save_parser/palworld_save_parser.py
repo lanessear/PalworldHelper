@@ -3,11 +3,22 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 from palsav.core import decompress_sav_to_gvas
 from palsav.gvas import GvasFile
 from palsav.paltypes import PALWORLD_CUSTOM_PROPERTIES, PALWORLD_TYPE_HINTS
+
+
+def load_character_names() -> dict[str, str]:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    path = base / "palworld_character_names.json"
+    if not path.is_file():
+        return {}
+    with path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+    return {str(key): str(value) for key, value in data.items() if key and value}
 
 
 def unwrap(value: Any) -> Any:
@@ -156,6 +167,7 @@ def main() -> None:
     }
     decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, wanted, allow_nan=False).dump()
     world = world_save_data(decoded)
+    character_names = load_character_names()
 
     characters = [parse_character(entry) for entry in map_entries(world, "CharacterSaveParameterMap")]
     guild_names = guild_player_names(world)
@@ -184,10 +196,12 @@ def main() -> None:
         owner_name = guild_names.get(owner_uid)
         if not owner_name and owner_uid in player_by_uid:
             owner_name = player_by_uid[owner_uid]["name"]
+        species = character_names.get(character["species"], character["species"])
         pals.append({
             "owner": owner_name or character["ownerPlayerUid"] or "World / base",
             "ownerPlayerUid": character["ownerPlayerUid"],
-            "species": character["species"],
+            "species": species,
+            "characterId": character["species"],
             "nickname": character["name"],
             "level": character["level"],
             "gender": character["gender"],

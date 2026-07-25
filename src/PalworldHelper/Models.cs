@@ -36,3 +36,7 @@ public sealed class BreedingResult
     public DateTimeOffset? FirstSeen { get; set; }
 }
 public sealed record BreedingStep(string Parent, string Mate, string Child);
+
+public sealed record BreedingPlanStep(string Parent, string Mate, string Child, bool ParentOwned, bool MateOwned);
+
+public sealed record ParentChoice(string Parent1, string Parent2);

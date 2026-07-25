@@ -7,7 +7,11 @@ This project intentionally keeps external parser code out of the repository. The
 - **Purpose**: Read Palworld `.sav` files, including Oodle-compressed saves.
 - **Runtime artifact**: `parser/PalworldSaveParser.exe` in release packages.
 - **Build wrapper in this repository**: `tools/save_parser/palworld_save_parser.py`
+- **Character ID mapping in this repository**: `tools/save_parser/palworld_character_names.json`
 - **Upstream source repository**: https://github.com/deafdudecomputers/PalworldSaveTools
+- **Mapping source files**:
+  - `resources/game_data/breedingdata.json`
+  - `resources/game_data/characters.json`
 - **Upstream packages used by the build**:
   - `palsav-flex` from `src/palsav`
   - `palooz` from `src/palsav/palooz`

@@ -7,6 +7,7 @@ public sealed class BreedingService
 {
     private readonly Dictionary<string, string> _names = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<(string mate, string child)>> _graph = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<ParentChoice>> _parentsByChild = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<string> Names => _names.Values.OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase).ToList();
     public int ResultCount { get; private set; }
@@ -20,6 +21,7 @@ public sealed class BreedingService
 
         _names.Clear();
         _graph.Clear();
+        _parentsByChild.Clear();
         ResultCount = 0;
 
         if (!root.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
@@ -89,6 +91,8 @@ public sealed class BreedingService
         AddName(parent1); AddName(parent2); AddName(child);
         AddEdge(parent1, parent2, child);
         AddEdge(parent2, parent1, child);
+        if (!_parentsByChild.TryGetValue(child.Trim(), out var parents)) _parentsByChild[child.Trim()] = parents = [];
+        parents.Add(new ParentChoice(parent1.Trim(), parent2.Trim()));
         ResultCount++;
     }
 
@@ -132,5 +136,103 @@ public sealed class BreedingService
             }
         }
         return null;
+    }
+
+    public IReadOnlyList<BreedingPlanStep>? FindShortestFromAvailable(string target, IReadOnlySet<string>? availableSpecies)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return null;
+
+        var unrestricted = availableSpecies is null || availableSpecies.Count == 0;
+        var startingSpecies = unrestricted ? Names : Names.Where(species => availableSpecies?.Contains(species) == true).ToList();
+        if (startingSpecies.Any(name => name.Equals(target, StringComparison.OrdinalIgnoreCase)))
+            return [];
+
+        var queue = new Queue<string>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var previous = new Dictionary<string, (string prior, string mate)>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var species in startingSpecies)
+        {
+            if (visited.Add(species)) queue.Enqueue(species);
+        }
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!_graph.TryGetValue(current, out var edges)) continue;
+
+            foreach (var edge in edges)
+            {
+                if (!unrestricted && !availableSpecies!.Contains(edge.mate)) continue;
+                if (!visited.Add(edge.child)) continue;
+
+                previous[edge.child] = (current, edge.mate);
+                if (edge.child.Equals(target, StringComparison.OrdinalIgnoreCase))
+                    return BuildPlan(target, previous, availableSpecies, unrestricted);
+
+                queue.Enqueue(edge.child);
+            }
+        }
+
+        return null;
+    }
+
+    public IReadOnlyList<BreedingPlanStep>? FindShortestFromStart(string start, string target, IReadOnlySet<string>? availableSpecies)
+    {
+        if (start.Equals(target, StringComparison.OrdinalIgnoreCase)) return [];
+
+        var unrestricted = availableSpecies is null || availableSpecies.Count == 0;
+        var queue = new Queue<string>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { start };
+        var previous = new Dictionary<string, (string prior, string mate)>(StringComparer.OrdinalIgnoreCase);
+        queue.Enqueue(start);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!_graph.TryGetValue(current, out var edges)) continue;
+
+            foreach (var edge in edges)
+            {
+                if (!unrestricted && !availableSpecies!.Contains(edge.mate)) continue;
+                if (!visited.Add(edge.child)) continue;
+
+                previous[edge.child] = (current, edge.mate);
+                if (edge.child.Equals(target, StringComparison.OrdinalIgnoreCase))
+                    return BuildPlan(target, previous, availableSpecies, unrestricted);
+
+                queue.Enqueue(edge.child);
+            }
+        }
+
+        return null;
+    }
+
+    public IReadOnlyList<ParentChoice> GetParentChoices(string child)
+        => _parentsByChild.TryGetValue(child.Trim(), out var parents)
+            ? parents.OrderBy(x => x.Parent1, StringComparer.CurrentCultureIgnoreCase).ThenBy(x => x.Parent2, StringComparer.CurrentCultureIgnoreCase).ToList()
+            : [];
+
+    private static List<BreedingPlanStep> BuildPlan(
+        string target,
+        Dictionary<string, (string prior, string mate)> previous,
+        IReadOnlySet<string>? availableSpecies,
+        bool unrestricted)
+    {
+        var steps = new List<BreedingPlanStep>();
+        var cursor = target;
+        while (previous.TryGetValue(cursor, out var item))
+        {
+            steps.Add(new BreedingPlanStep(
+                item.prior,
+                item.mate,
+                cursor,
+                unrestricted || availableSpecies?.Contains(item.prior) == true,
+                unrestricted || availableSpecies?.Contains(item.mate) == true));
+            cursor = item.prior;
+        }
+
+        steps.Reverse();
+        return steps;
     }
 }

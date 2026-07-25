@@ -5,7 +5,7 @@ using System.Text;
 
 namespace PalworldHelper;
 
-public sealed record SaveInspectionResult(string Metadata, string HexPreview, string ReadableStrings);
+public sealed record SaveInspectionResult(string Metadata, string HexPreview, string ReadableStrings, ParsedSave ParsedSave);
 
 public static class SaveInspectionService
 {
@@ -35,7 +35,7 @@ public static class SaveInspectionService
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Pals: {parsed.PalCount:N0}"))
             .ToString();
 
-        return new SaveInspectionResult(metadata, BuildHexPreview(preview.AsSpan(0, totalRead)), FormatParsedData(parsed));
+        return new SaveInspectionResult(metadata, BuildHexPreview(preview.AsSpan(0, totalRead)), FormatParsedData(parsed), parsed);
     }
 
     private static string FormatParsedData(ParsedSave save)

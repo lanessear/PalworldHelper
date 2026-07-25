@@ -36,7 +36,8 @@ Human approval does not imply human authorship of the implementation.
 - **Save parsing and inspection**: Select a local `Level.sav`, parse players, owned Pals, levels, genders, and passive skills, and keep the selected path for the next launch.
 - **Bundled breeding data**: Ship the versioned repository dataset `palworld_breeding_results_v1.0_2026-07-24.json` next to the executable.
 - **Custom breeding data**: Load compatible custom breeding JSON files when you want to test another dataset.
-- **Breeding chain search**: Pick source and target Pals from searchable dropdowns and calculate the shortest continuous breeding route.
+- **Save-aware breeding chains**: Pick a desired child Pal, optionally add desired passive skills, and calculate a breeding route using either all Pals or only the Pals found in the loaded save.
+- **Parent choice hints**: Click a breeding step to see owned parent candidates, levels, genders, passive skills, and how well they match the desired passives.
 - **Maintenance tools**: Check for updates, install a downloaded release, and uninstall local app data from inside the desktop app.
 
 ## Next development step
