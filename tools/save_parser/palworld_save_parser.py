@@ -21,6 +21,22 @@ def load_character_names() -> dict[str, str]:
     return {str(key): str(value) for key, value in data.items() if key and value}
 
 
+def load_passive_skill_names() -> dict[str, str]:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    path = base / "palworld_passive_skills.json"
+    if not path.is_file():
+        return {}
+    with path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+    if not isinstance(data, list):
+        return {}
+    return {
+        str(item.get("id")): str(item.get("name"))
+        for item in data
+        if isinstance(item, dict) and item.get("id") and item.get("name")
+    }
+
+
 def unwrap(value: Any) -> Any:
     """Unwrap the small property wrappers emitted by palsav without searching siblings."""
     while isinstance(value, dict):
@@ -168,6 +184,7 @@ def main() -> None:
     decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, wanted, allow_nan=False).dump()
     world = world_save_data(decoded)
     character_names = load_character_names()
+    passive_skill_names = load_passive_skill_names()
 
     characters = [parse_character(entry) for entry in map_entries(world, "CharacterSaveParameterMap")]
     guild_names = guild_player_names(world)
@@ -205,7 +222,7 @@ def main() -> None:
             "nickname": character["name"],
             "level": character["level"],
             "gender": character["gender"],
-            "passiveSkills": character["passiveSkills"],
+            "passiveSkills": [passive_skill_names.get(skill, skill) for skill in character["passiveSkills"]],
             "instanceId": character["instanceId"],
         })
 

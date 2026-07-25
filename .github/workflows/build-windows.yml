@@ -73,7 +73,7 @@ jobs:
       - name: Build save parser
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz --add-data="tools/save_parser/palworld_character_names.json:." tools/save_parser/palworld_save_parser.py
+          python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz --add-data="tools/save_parser/palworld_character_names.json:." --add-data="tools/save_parser/palworld_passive_skills.json:." tools/save_parser/palworld_save_parser.py
 
       - name: Restore dependencies
         run: dotnet restore PalworldHelper.sln

@@ -1,0 +1,512 @@
+[
+  {
+    "id": "PAL_ALLAttack_up3",
+    "name": "Demon God",
+    "rank": 4,
+    "description": "Attack +30% Defense +5%"
+  },
+  {
+    "id": "Deffence_up3",
+    "name": "Diamond Body",
+    "rank": 4,
+    "description": "Defense +{EffectValue1}% Immune to Flinch Immune to Knockback"
+  },
+  {
+    "id": "Stamina_Up_3",
+    "name": "Eternal Engine",
+    "rank": 4,
+    "description": "Max stamina +{EffectValue1}% *This effect is only valid for rideable pals."
+  },
+  {
+    "id": "PAL_Sanity_Down_3",
+    "name": "Heart of the Immovable King",
+    "rank": 4,
+    "description": "SAN drops +20.0% slower."
+  },
+  {
+    "id": "SwimSpeed_up_3",
+    "name": "King of the Waves",
+    "rank": 4,
+    "description": "{EffectValue1}% increase movement speed on water."
+  },
+  {
+    "id": "SelfDeathAddItemDrop_up_3",
+    "name": "Lavish Hospitality",
+    "rank": 4,
+    "description": "Your Dropped Items + {EffectValue1}%"
+  },
+  {
+    "id": "RideJumpCount_Increase1",
+    "name": "Lightfooted",
+    "rank": 4,
+    "description": "Mounted Jump Count +1"
+  },
+  {
+    "id": "PAL_FullStomach_Down_3",
+    "name": "Mastery of Fasting",
+    "rank": 4,
+    "description": "Hunger decreases +20.0% slower."
+  },
+  {
+    "id": "WorkSuitabilityAddRank_MonsterFarm_2",
+    "name": "Ranch Master",
+    "rank": 4,
+    "description": "Ranching's work suitability +2"
+  },
+  {
+    "id": "CraftSpeed_up3",
+    "name": "Remarkable Craftsmanship",
+    "rank": 4,
+    "description": "Work Speed +75%"
+  },
+  {
+    "id": "MoveSpeed_up_3",
+    "name": "Swift",
+    "rank": 4,
+    "description": "{EffectValue1}% increase to movement speed."
+  },
+  {
+    "id": "Vampire",
+    "name": "Vampiric",
+    "rank": 4,
+    "description": "Absorbs a portion of the damage dealt to restore HP.  Does not sleep at night and continues to work."
+  },
+  {
+    "id": "SwimSpeed_up_2",
+    "name": "Ace Swimmer",
+    "rank": 3,
+    "description": "{EffectValue1}% increase movement speed on water."
+  },
+  {
+    "id": "CraftSpeed_up2",
+    "name": "Artisan",
+    "rank": 3,
+    "description": "Work Speed +50%"
+  },
+  {
+    "id": "Deffence_up2",
+    "name": "Burly Body",
+    "rank": 3,
+    "description": "Defense +{EffectValue1}% Immune to Flinch"
+  },
+  {
+    "id": "PAL_FullStomach_Down_2",
+    "name": "Diet Lover",
+    "rank": 3,
+    "description": "Hunger decreases +15.0% slower."
+  },
+  {
+    "id": "WorkSuitabilityAddRank_MonsterFarm_1",
+    "name": "Farmhand",
+    "rank": 3,
+    "description": "Ranching's work suitability +1"
+  },
+  {
+    "id": "PAL_ALLAttack_up2",
+    "name": "Ferocious",
+    "rank": 3,
+    "description": "Attack +20%"
+  },
+  {
+    "id": "AutoHPRegeneRate_Passive",
+    "name": "Healing Coach",
+    "rank": 3,
+    "description": "Player Auto Health Regeneration Rate +{EffectValue1}%"
+  },
+  {
+    "id": "Stamina_Up_1",
+    "name": "Infinite Stamina",
+    "rank": 3,
+    "description": "Max stamina +{EffectValue1}% *This effect is only valid for rideable pals."
+  },
+  {
+    "id": "TrainerLogging_up1",
+    "name": "Logging Foreman",
+    "rank": 3,
+    "description": "{EffectValue1}% increase in Player Logging Efficiency."
+  },
+  {
+    "id": "TrainerMining_up1",
+    "name": "Mine Foreman",
+    "rank": 3,
+    "description": "{EffectValue1}% increase in Player Mining Efficiency."
+  },
+  {
+    "id": "TrainerWorkSpeed_UP_1",
+    "name": "Motivational Leader",
+    "rank": 3,
+    "description": "{EffectValue1}% increase in Player Work Speed."
+  },
+  {
+    "id": "SalePrice_Up_1",
+    "name": "Noble",
+    "rank": 3,
+    "description": "Increases the value of items when sold by +{EffectValue1}%"
+  },
+  {
+    "id": "Test_PalEgg_HatchingSpeed_Up",
+    "name": "Philanthropist",
+    "rank": 3,
+    "description": "When assigned to a Breeding Farm, breeding speed is increased by {EffectValue1}%."
+  },
+  {
+    "id": "ReloadSpeedUp_Passive",
+    "name": "Reload Master",
+    "rank": 3,
+    "description": "Player Reload Speed +{EffectValue1}%"
+  },
+  {
+    "id": "MoveSpeed_up_2",
+    "name": "Runner",
+    "rank": 3,
+    "description": "{EffectValue1}% increase to movement speed."
+  },
+  {
+    "id": "CoolTimeReduction_Up_1",
+    "name": "Serenity",
+    "rank": 3,
+    "description": "Active skill cooldown reduction {EffectValue1}% Attack +{EffectValue2}%"
+  },
+  {
+    "id": "SelfDeathAddItemDrop_up_2",
+    "name": "Service-Minded",
+    "rank": 3,
+    "description": "Your Dropped Items + {EffectValue1}%"
+  },
+  {
+    "id": "TrainerDEF_UP_1",
+    "name": "Stronghold Strategist",
+    "rank": 3,
+    "description": "{EffectValue1}% increase in Player Defense."
+  },
+  {
+    "id": "TrainerATK_UP_1",
+    "name": "Vanguard",
+    "rank": 3,
+    "description": "{EffectValue1}% increase in Player Attack."
+  },
+  {
+    "id": "PlayerSP_DecreaseRate_Passive",
+    "name": "Wellness Watcher",
+    "rank": 3,
+    "description": "Player Stamina Consumption -5.0%"
+  },
+  {
+    "id": "PAL_Sanity_Down_2",
+    "name": "Workaholic",
+    "rank": 3,
+    "description": "SAN drops +15.0% slower."
+  },
+  {
+    "id": "Deffence_up2_2",
+    "name": "Heavyweight",
+    "rank": 2,
+    "description": "Defense +{EffectValue1}% Immune to Knockback"
+  },
+  {
+    "id": "Noukin",
+    "name": "Musclehead",
+    "rank": 2,
+    "description": "Attack +30% Work Speed -50%"
+  },
+  {
+    "id": "ElementResist_Normal_1_PAL",
+    "name": "Abnormal",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Neutral damage."
+  },
+  {
+    "id": "PAL_oraora",
+    "name": "Aggressive",
+    "rank": 1,
+    "description": "Attack +10% Defense -10%"
+  },
+  {
+    "id": "ElementBoost_Dragon_1_PAL",
+    "name": "Blood of the Dragon",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Dragon attack damage."
+  },
+  {
+    "id": "ElementResist_Leaf_1_PAL",
+    "name": "Botanical Barrier",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Grass damage."
+  },
+  {
+    "id": "PAL_ALLAttack_up1",
+    "name": "Brave",
+    "rank": 1,
+    "description": "Attack +10%"
+  },
+  {
+    "id": "ElementBoost_Thunder_1_PAL",
+    "name": "Capacitor",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Lightning attack damage."
+  },
+  {
+    "id": "ElementResist_Dark_1_PAL",
+    "name": "Cheery",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Dark damage."
+  },
+  {
+    "id": "ElementBoost_Ice_1_PAL",
+    "name": "Coldblooded",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Ice attack damage."
+  },
+  {
+    "id": "PAL_conceited",
+    "name": "Conceited",
+    "rank": 1,
+    "description": "Work Speed +10% Defense -10%"
+  },
+  {
+    "id": "PAL_FullStomach_Down_1",
+    "name": "Dainty Eater",
+    "rank": 1,
+    "description": "Hunger decreases +10.0% slower."
+  },
+  {
+    "id": "ElementResist_Dragon_1_PAL",
+    "name": "Dragonkiller",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Dragon damage."
+  },
+  {
+    "id": "ElementResist_Earth_1_PAL",
+    "name": "Earthquake Resistant",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Earth damage."
+  },
+  {
+    "id": "SalePrice_Up_2",
+    "name": "Fine Furs",
+    "rank": 1,
+    "description": "Increases the value of items when sold by +{EffectValue1}%"
+  },
+  {
+    "id": "Stamina_Up_2",
+    "name": "Fit as a Fiddle",
+    "rank": 1,
+    "description": "Max stamina +{EffectValue1}% *This effect is only valid for rideable pals."
+  },
+  {
+    "id": "ElementBoost_Leaf_1_PAL",
+    "name": "Fragrant Foliage",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Grass attack damage."
+  },
+  {
+    "id": "Deffence_up1",
+    "name": "Hard Skin",
+    "rank": 1,
+    "description": "Defense +10%"
+  },
+  {
+    "id": "ElementResist_Ice_1_PAL",
+    "name": "Heated Body",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Ice damage."
+  },
+  {
+    "id": "PAL_rude",
+    "name": "Hooligan",
+    "rank": 1,
+    "description": "Attack +15% Work Speed -10%"
+  },
+  {
+    "id": "ElementBoost_Aqua_1_PAL",
+    "name": "Hydromaniac",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Water attack damage."
+  },
+  {
+    "id": "CoolTimeReduction_Up_2",
+    "name": "Impatient",
+    "rank": 1,
+    "description": "Active skill cooldown reduction {EffectValue1}%"
+  },
+  {
+    "id": "Nocturnal",
+    "name": "Insomnia",
+    "rank": 1,
+    "description": "Does not sleep and continues to work even at night."
+  },
+  {
+    "id": "ElementResist_Thunder_1_PAL",
+    "name": "Insulated Body",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Lightning damage."
+  },
+  {
+    "id": "PAL_masochist",
+    "name": "Masochist",
+    "rank": 1,
+    "description": "Defense +15% Attack -15%"
+  },
+  {
+    "id": "MoveSpeed_up_1",
+    "name": "Nimble",
+    "rank": 1,
+    "description": "{EffectValue1}% increase to movement speed."
+  },
+  {
+    "id": "PAL_Sanity_Down_1",
+    "name": "Positive Thinker",
+    "rank": 1,
+    "description": "SAN drops +10.0% slower."
+  },
+  {
+    "id": "ElementBoost_Earth_1_PAL",
+    "name": "Power of Gaia",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Earth attack damage."
+  },
+  {
+    "id": "ElementBoost_Fire_1_PAL",
+    "name": "Pyromaniac",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Fire attack damage."
+  },
+  {
+    "id": "PAL_sadist",
+    "name": "Sadist",
+    "rank": 1,
+    "description": "Attack +15% Defense -15%"
+  },
+  {
+    "id": "CraftSpeed_up1",
+    "name": "Serious",
+    "rank": 1,
+    "description": "Work Speed +20%"
+  },
+  {
+    "id": "SwimSpeed_up_1",
+    "name": "Sleek Stroke",
+    "rank": 1,
+    "description": "{EffectValue1}% increase movement speed on water."
+  },
+  {
+    "id": "ElementBoost_Normal_1_PAL",
+    "name": "Spirit of Zen",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Neutral attack damage."
+  },
+  {
+    "id": "ElementResist_Fire_1_PAL",
+    "name": "Suntan Lover",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Fire damage."
+  },
+  {
+    "id": "ElementBoost_Dark_1_PAL",
+    "name": "Veil of Darkness",
+    "rank": 1,
+    "description": "{EffectValue1}% increase in Dark attack damage."
+  },
+  {
+    "id": "ElementResist_Aqua_1_PAL",
+    "name": "Waterproof",
+    "rank": 1,
+    "description": "{EffectValue1}% decrease in incoming Water damage."
+  },
+  {
+    "id": "PAL_CorporateSlave",
+    "name": "Work Slave",
+    "rank": 1,
+    "description": "Work Speed +30% Attack -30%"
+  },
+  {
+    "id": "CraftSpeed_down1",
+    "name": "Clumsy",
+    "rank": -1,
+    "description": "Work Speed -10%"
+  },
+  {
+    "id": "PAL_ALLAttack_down1",
+    "name": "Coward",
+    "rank": -1,
+    "description": "Attack -10%"
+  },
+  {
+    "id": "Deffence_down1",
+    "name": "Downtrodden",
+    "rank": -1,
+    "description": "Defense -10%"
+  },
+  {
+    "id": "CoolTimeReduction_Down_1",
+    "name": "Easygoing",
+    "rank": -1,
+    "description": "Active skill cooldown extension {EffectValue1}%"
+  },
+  {
+    "id": "PAL_FullStomach_Up_1",
+    "name": "Glutton",
+    "rank": -1,
+    "description": "Hunger decreases +10.0% faster."
+  },
+  {
+    "id": "NonKilling",
+    "name": "Mercy Hit",
+    "rank": -1,
+    "description": "Pacifist. Will not reduce the target's Health below 1."
+  },
+  {
+    "id": "NightOwl",
+    "name": "Night Owl",
+    "rank": -1,
+    "description": "Tends to nap through the day, due to being nocturnal."
+  },
+  {
+    "id": "SalePrice_Down_1",
+    "name": "Shabby",
+    "rank": -1,
+    "description": "Decrease the value of items when sold by {EffectValue1}%"
+  },
+  {
+    "id": "Stamina_Down_1",
+    "name": "Sickly",
+    "rank": -1,
+    "description": "Max Stamina {EffectValue1}% *This effect is only valid for rideable pals."
+  },
+  {
+    "id": "PAL_Sanity_Up_1",
+    "name": "Unstable",
+    "rank": -1,
+    "description": "SAN drops +10.0% faster."
+  },
+  {
+    "id": "PAL_FullStomach_Up_2",
+    "name": "Bottomless Stomach",
+    "rank": -2,
+    "description": "Hunger decreases +15.0% faster."
+  },
+  {
+    "id": "PAL_Sanity_Up_2",
+    "name": "Destructive",
+    "rank": -2,
+    "description": "SAN drops +15.0% faster."
+  },
+  {
+    "id": "Deffence_down2",
+    "name": "Brittle",
+    "rank": -3,
+    "description": "Defense -20%"
+  },
+  {
+    "id": "PAL_ALLAttack_down2",
+    "name": "Pacifist",
+    "rank": -3,
+    "description": "Attack -20%"
+  },
+  {
+    "id": "CraftSpeed_down2",
+    "name": "Slacker",
+    "rank": -3,
+    "description": "Work Speed -30%"
+  }
+]

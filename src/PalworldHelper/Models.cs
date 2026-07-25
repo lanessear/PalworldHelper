@@ -40,3 +40,14 @@ public sealed record BreedingStep(string Parent, string Mate, string Child);
 public sealed record BreedingPlanStep(string Parent, string Mate, string Child, bool ParentOwned, bool MateOwned);
 
 public sealed record ParentChoice(string Parent1, string Parent2);
+
+public sealed record PassiveSkillOption(string Id, string Name, int Rank, string Description)
+{
+    public string DisplayName => string.IsNullOrWhiteSpace(Description)
+        ? $"{Name} ({Id})"
+        : $"{Name} ({Id}) · {Description}";
+}
+
+public sealed record SavePalRow(string Species, string Nickname, string Owner, int Level, string Gender, string PassiveSkills);
+
+public sealed record SavePlayerRow(string Name, int Level, string PlayerUid);

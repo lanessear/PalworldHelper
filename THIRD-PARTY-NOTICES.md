@@ -8,10 +8,12 @@ This project intentionally keeps external parser code out of the repository. The
 - **Runtime artifact**: `parser/PalworldSaveParser.exe` in release packages.
 - **Build wrapper in this repository**: `tools/save_parser/palworld_save_parser.py`
 - **Character ID mapping in this repository**: `tools/save_parser/palworld_character_names.json`
+- **Passive skill catalog in this repository**: `tools/save_parser/palworld_passive_skills.json`
 - **Upstream source repository**: https://github.com/deafdudecomputers/PalworldSaveTools
 - **Mapping source files**:
   - `resources/game_data/breedingdata.json`
   - `resources/game_data/characters.json`
+  - `resources/game_data/skills.json`
 - **Upstream packages used by the build**:
   - `palsav-flex` from `src/palsav`
   - `palooz` from `src/palsav/palooz`

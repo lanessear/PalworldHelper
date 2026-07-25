@@ -10,6 +10,8 @@ public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService = new();
     private readonly BreedingService _breeding = new();
+    private readonly List<PassiveSkillOption> _passiveSkillOptions = PassiveSkillCatalog.Load().ToList();
+    private readonly List<string> _selectedPassiveSkills = [];
     private AppSettings _settings;
     private ServerProfile? _current;
     private ParsedSave? _parsedSave;
@@ -18,6 +20,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = _settingsService.Load();
+        PassiveSkillPicker.ItemsSource = _passiveSkillOptions;
         RefreshProfiles();
 
         LoadInitialBreedingData();
@@ -210,7 +213,12 @@ public partial class MainWindow : Window
             SaveStatus.Text = "Reading and parsing save file …";
             SaveMetadata.Text = string.Empty;
             SaveHexPreview.Text = string.Empty;
-            SaveStrings.Text = string.Empty;
+            SavePlayersList.ItemsSource = null;
+            SavePalsList.ItemsSource = null;
+            SavePlayerCount.Text = "—";
+            SavePalCount.Text = "—";
+            SaveSpeciesCount.Text = "—";
+            SavePassiveCount.Text = "—";
 
             if (persistPath)
             {
@@ -222,7 +230,8 @@ public partial class MainWindow : Window
             _parsedSave = result.ParsedSave;
             SaveMetadata.Text = result.Metadata;
             SaveHexPreview.Text = result.HexPreview;
-            SaveStrings.Text = result.ReadableStrings;
+            PopulateSaveOverview(_parsedSave);
+            AddUnknownPassiveSkillsFromSave(_parsedSave);
             SaveStatus.Text = "✓ Save file loaded and parsed. This path will be restored on the next start.";
             UpdateBreedingAvailabilityStatus();
         }
@@ -361,11 +370,57 @@ The compact format may use "names" instead of "pals". Every result must contain 
     }
 
     private List<string> DesiredPassives()
-        => (DesiredPassiveSkills.Text ?? string.Empty)
-            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(skill => !string.IsNullOrWhiteSpace(skill))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        => _selectedPassiveSkills.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    private void AddPassiveSkill_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = PassiveSkillPicker.SelectedItem is PassiveSkillOption option
+            ? option.Name
+            : PassiveSkillPicker.Text?.Trim();
+
+        if (string.IsNullOrWhiteSpace(selected)) return;
+
+        var match = _passiveSkillOptions.FirstOrDefault(skill =>
+            skill.Name.Equals(selected, StringComparison.OrdinalIgnoreCase)
+            || skill.Id.Equals(selected, StringComparison.OrdinalIgnoreCase)
+            || skill.DisplayName.Equals(selected, StringComparison.OrdinalIgnoreCase));
+
+        AddPassiveSkillTag(match?.Name ?? selected);
+        PassiveSkillPicker.SelectedItem = null;
+        PassiveSkillPicker.Text = string.Empty;
+    }
+
+    private void AddPassiveSkillTag(string skill)
+    {
+        if (_selectedPassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)) return;
+        _selectedPassiveSkills.Add(skill);
+        RenderPassiveSkillTags();
+    }
+
+    private void RemovePassiveSkill_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is not string skill) return;
+        _selectedPassiveSkills.RemoveAll(x => x.Equals(skill, StringComparison.OrdinalIgnoreCase));
+        RenderPassiveSkillTags();
+    }
+
+    private void RenderPassiveSkillTags()
+    {
+        PassiveSkillTags.Children.Clear();
+        foreach (var skill in _selectedPassiveSkills.OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var button = new Button
+            {
+                Content = skill + "  ×",
+                Tag = skill,
+                Padding = new Thickness(8, 3, 8, 3),
+                Margin = new Thickness(0, 0, 6, 6),
+                Background = (System.Windows.Media.Brush)FindResource("Panel2")
+            };
+            button.Click += RemovePassiveSkill_Click;
+            PassiveSkillTags.Children.Add(button);
+        }
+    }
 
     private void ResultList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -433,5 +488,51 @@ The compact format may use "names" instead of "pals". Every result must contain 
             ? $" Save restriction active: {_parsedSave!.Pals.Select(p => p.Species).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0} owned species available."
             : " No save restriction active: all Pals are treated as available.";
         BreedingStatus.Text = $"✓ Loaded {_breeding.ResultCount:N0} results and {_breeding.Names.Count:N0} Pal names.{suffix}";
+    }
+
+    private void PopulateSaveOverview(ParsedSave save)
+    {
+        var players = save.Players
+            .OrderBy(player => player.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(player => new SavePlayerRow(player.Name, player.Level, player.PlayerUid))
+            .ToList();
+
+        var pals = save.Pals
+            .OrderBy(pal => pal.Owner, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(pal => pal.Species, StringComparer.CurrentCultureIgnoreCase)
+            .ThenByDescending(pal => pal.Level)
+            .Select(pal => new SavePalRow(
+                pal.Species,
+                pal.Nickname,
+                pal.Owner,
+                pal.Level,
+                pal.Gender,
+                pal.PassiveSkills.Count == 0 ? "—" : string.Join(", ", pal.PassiveSkills)))
+            .ToList();
+
+        SavePlayersList.ItemsSource = players;
+        SavePalsList.ItemsSource = pals;
+        SavePlayerCount.Text = players.Count.ToString("N0", CultureInfo.CurrentCulture);
+        SavePalCount.Text = pals.Count.ToString("N0", CultureInfo.CurrentCulture);
+        SaveSpeciesCount.Text = save.Pals.Select(pal => pal.Species).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
+        SavePassiveCount.Text = save.Pals.SelectMany(pal => pal.PassiveSkills).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
+    }
+
+    private void AddUnknownPassiveSkillsFromSave(ParsedSave save)
+    {
+        var known = _passiveSkillOptions.Select(skill => skill.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var extra = save.Pals
+            .SelectMany(pal => pal.PassiveSkills)
+            .Where(skill => !string.IsNullOrWhiteSpace(skill) && known.Add(skill))
+            .Select(skill => new PassiveSkillOption(skill, skill, 0, "Found in loaded save"))
+            .ToList();
+
+        if (extra.Count == 0) return;
+        _passiveSkillOptions.AddRange(extra);
+        PassiveSkillPicker.ItemsSource = null;
+        PassiveSkillPicker.ItemsSource = _passiveSkillOptions
+            .OrderByDescending(skill => skill.Rank)
+            .ThenBy(skill => skill.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
     }
 }
