@@ -90,7 +90,7 @@ jobs:
           }
 
           $compressedHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($compressed)).ToLowerInvariant()
-          if ($compressedHash -ne 'ac63b3576a30abbb7b5b09675c8b69140a05695d18cf3d7fc3727c0d48c73b9f') {
+          if ($compressedHash -ne '8c2fda8d4e49a4e896f74e417edbbd5992f0e573aa417c34ff4fcdcc46f729a8') {
             throw "Default GZIP SHA-256 mismatch: $compressedHash"
           }
 
