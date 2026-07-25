@@ -43,27 +43,32 @@ jobs:
           $parts = @(Get-ChildItem src/PalworldHelper/Embedded/BreedingData/part*.txt | Sort-Object Name)
           if ($parts.Count -ne 15) { throw "Expected exactly 15 Default data parts, found $($parts.Count)." }
 
-          $compressedPath = Join-Path $PWD 'palworld_breeding_results.default.json.gz'
-          $compressedOutput = [IO.File]::Create($compressedPath)
-          try {
-            foreach ($part in $parts) {
-              $text = (Get-Content $part.FullName -Raw).Trim().TrimStart([char]0xFEFF)
-              $text = $text -replace '\s', ''
-              if ($text -notmatch '^[A-Za-z0-9+/]*={0,2}$') {
-                throw "Default data part '$($part.Name)' contains invalid Base64 characters."
-              }
-              try {
-                $bytes = [Convert]::FromBase64String($text)
-              } catch {
-                throw "Default data part '$($part.Name)' is not valid Base64: $($_.Exception.Message)"
-              }
-              $compressedOutput.Write($bytes, 0, $bytes.Length)
+          $builder = [Text.StringBuilder]::new()
+          foreach ($part in $parts) {
+            $raw = Get-Content $part.FullName -Raw
+            $clean = [regex]::Replace($raw, '[^A-Za-z0-9+/=]', '')
+            if ([string]::IsNullOrWhiteSpace($clean)) {
+              throw "Default data part '$($part.Name)' contains no Base64 data."
             }
-          } finally {
-            $compressedOutput.Dispose()
+            [void]$builder.Append($clean)
           }
 
-          $input = [IO.File]::OpenRead($compressedPath)
+          $base64 = $builder.ToString()
+          $firstPadding = $base64.IndexOf('=')
+          if ($firstPadding -ge 0 -and $firstPadding -lt ($base64.Length - 2)) {
+            throw "Default data contains Base64 padding before the end of the combined payload."
+          }
+          if (($base64.Length % 4) -ne 0) {
+            throw "Combined Base64 payload length $($base64.Length) is not divisible by four."
+          }
+
+          try {
+            $compressed = [Convert]::FromBase64String($base64)
+          } catch {
+            throw "Combined Default data is not valid Base64: $($_.Exception.Message)"
+          }
+
+          $input = [IO.MemoryStream]::new($compressed)
           $gzip = [IO.Compression.GZipStream]::new($input, [IO.Compression.CompressionMode]::Decompress)
           $outputPath = Join-Path $PWD 'palworld_breeding_results.default.json'
           $output = [IO.File]::Create($outputPath)
@@ -72,7 +77,6 @@ jobs:
           } finally {
             $output.Dispose(); $gzip.Dispose(); $input.Dispose()
           }
-          Remove-Item $compressedPath -Force
 
           $json = Get-Content $outputPath -Raw | ConvertFrom-Json
           if ($json.results.Count -ne 44551) { throw "Default dataset contains $($json.results.Count) results instead of 44,551." }
@@ -112,7 +116,6 @@ jobs:
             -p:DebugSymbols=false `
             --output publish
           Copy-Item palworld_breeding_results.default.json publish/palworld_breeding_results.default.json
-          $version = if ('${{ github.ref_type }}' -eq 'tag') { '${{ github.ref_name }}'.TrimStart('v') } else { '0.6.0' }
           $files = @(Get-ChildItem publish -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path publish).Path.Length + 1).Replace('\','/') })
           $files += 'palworldhelper.manifest.json'
           $files | ConvertTo-Json | Set-Content publish/palworldhelper.manifest.json -Encoding utf8
