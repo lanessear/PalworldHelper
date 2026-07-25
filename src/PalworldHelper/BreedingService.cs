@@ -85,9 +85,10 @@ public sealed class BreedingService
     private void AddResult(string parent1, string parent2, string child)
     {
         if (string.IsNullOrWhiteSpace(parent1) || string.IsNullOrWhiteSpace(parent2) || string.IsNullOrWhiteSpace(child)) return;
+        if (parent1.Equals(parent2, StringComparison.OrdinalIgnoreCase)) return;
         AddName(parent1); AddName(parent2); AddName(child);
         AddEdge(parent1, parent2, child);
-        if (!parent1.Equals(parent2, StringComparison.OrdinalIgnoreCase)) AddEdge(parent2, parent1, child);
+        AddEdge(parent2, parent1, child);
         ResultCount++;
     }
 

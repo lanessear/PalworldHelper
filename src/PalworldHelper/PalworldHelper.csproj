@@ -16,8 +16,8 @@
     <PackageReference Include="SSH.NET" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="../../palworld_breeding_results.default.json"
-             Link="palworld_breeding_results.default.json"
+    <Content Include="../../palworld_breeding_results_v1.0_2026-07-24.json"
+             Link="palworld_breeding_results_v1.0_2026-07-24.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

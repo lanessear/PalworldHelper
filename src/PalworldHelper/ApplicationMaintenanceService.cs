@@ -142,7 +142,7 @@ if (Test-Path $manifest) {
   foreach ($relative in $files) { Remove-Item -Force (Join-Path $install $relative) -ErrorAction SilentlyContinue }
 } else {
   Remove-Item -Force (Join-Path $install 'PalworldHelper.exe') -ErrorAction SilentlyContinue
-  Remove-Item -Force (Join-Path $install 'palworld_breeding_results.default.json') -ErrorAction SilentlyContinue
+  Remove-Item -Force (Join-Path $install 'palworld_breeding_results_v1.0_2026-07-24.json') -ErrorAction SilentlyContinue
 }
 Remove-Item -Recurse -Force '{{Escape(localData)}}' -ErrorAction SilentlyContinue
 Get-ChildItem $install -Directory -Recurse | Sort-Object FullName -Descending | Remove-Item -Force -ErrorAction SilentlyContinue

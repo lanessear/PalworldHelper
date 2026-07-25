@@ -35,20 +35,21 @@ jobs:
       - name: Verify default breeding JSON
         shell: pwsh
         run: |
-          $path = Join-Path $PWD 'palworld_breeding_results.default.json'
+          $path = Join-Path $PWD 'palworld_breeding_results_v1.0_2026-07-24.json'
           if (-not (Test-Path $path)) {
-            throw "Missing repository file: palworld_breeding_results.default.json"
+            throw "Missing repository file: palworld_breeding_results_v1.0_2026-07-24.json"
           }
 
           $json = Get-Content $path -Raw | ConvertFrom-Json
           if ($json.pals.Count -ne 298) {
             throw "Default dataset contains $($json.pals.Count) Pal names instead of 298."
           }
-          if ($json.results.Count -ne 44253) {
-            throw "Default dataset contains $($json.results.Count) results instead of 44,253."
+          if ($json.results.Count -ne 44551) {
+            throw "Default dataset contains $($json.results.Count) results instead of 44,551."
           }
-          if (@($json.results | Where-Object { $_[0] -eq $_[1] }).Count -ne 0) {
-            throw "Default dataset still contains self-breeding rows."
+          $selfBreedingRows = @($json.results | Where-Object { $_[0] -eq $_[1] }).Count
+          if ($selfBreedingRows -ne 298) {
+            throw "Default dataset contains $selfBreedingRows self-breeding rows instead of 298."
           }
 
       - name: Restore dependencies
@@ -85,7 +86,7 @@ jobs:
           if ($executables.Count -ne 1 -or $executables[0].Name -ne 'PalworldHelper.exe') {
             throw "Expected exactly one EXE named PalworldHelper.exe, found: $($executables.Name -join ', ')"
           }
-          foreach ($required in @('PalworldHelper.exe','palworld_breeding_results.default.json','palworldhelper.manifest.json')) {
+          foreach ($required in @('PalworldHelper.exe','palworld_breeding_results_v1.0_2026-07-24.json','palworldhelper.manifest.json')) {
             if (-not (Test-Path (Join-Path publish $required))) { throw "Missing required package file: $required" }
           }
 

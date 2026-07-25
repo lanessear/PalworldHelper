@@ -4,7 +4,7 @@ namespace PalworldHelper;
 
 public static class BundledBreedingDataService
 {
-    public const string DefaultFileName = "palworld_breeding_results.default.json";
+    public const string DefaultFileName = "palworld_breeding_results_v1.0_2026-07-24.json";
 
     public static string DefaultPath => Path.Combine(AppContext.BaseDirectory, DefaultFileName);
 
