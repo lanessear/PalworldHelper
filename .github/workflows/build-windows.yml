@@ -1,16 +1,18 @@
-name: Build Windows EXE
+name: Build Windows package
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-windows-${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Windows EXE
+    name: Build Windows package
     runs-on: windows-latest
 
     steps:
@@ -35,6 +37,22 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Reconstruct Default breeding JSON
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem src/PalworldHelper/Embedded/BreedingData/part*.txt | Sort-Object Name
+          if ($parts.Count -lt 15) { throw "Expected all 15 Default data parts, found $($parts.Count)." }
+          $base64 = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
+          $compressed = [Convert]::FromBase64String($base64)
+          $input = [IO.MemoryStream]::new($compressed)
+          $gzip = [IO.Compression.GZipStream]::new($input, [IO.Compression.CompressionMode]::Decompress)
+          $outputPath = Join-Path $PWD 'palworld_breeding_results.default.json'
+          $output = [IO.File]::Create($outputPath)
+          $gzip.CopyTo($output)
+          $output.Dispose(); $gzip.Dispose(); $input.Dispose()
+          $json = Get-Content $outputPath -Raw | ConvertFrom-Json
+          if ($json.results.Count -ne 44551) { throw "Default dataset contains $($json.results.Count) results instead of 44,551." }
+
       - name: Install Oodle-capable save parser
         shell: pwsh
         run: |
@@ -43,12 +61,10 @@ jobs:
           python -m pip install ./parser-upstream/src/palsav/palooz
           python -m pip install ./parser-upstream/src/palsav
 
-      - name: Build save parser helper
-        run: python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz tools/save_parser/palworld_save_parser.py
-
-      - name: Embed parser in PalworldHelper
+      - name: Build and embed save parser
         shell: pwsh
         run: |
+          python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz tools/save_parser/palworld_save_parser.py
           New-Item -ItemType Directory -Force src/PalworldHelper/Embedded | Out-Null
           Copy-Item dist/PalworldSaveParser.exe src/PalworldHelper/Embedded/PalworldSaveParser.exe
 
@@ -58,10 +74,10 @@ jobs:
       - name: Build solution
         run: dotnet build PalworldHelper.sln --configuration Release --no-restore
 
-      - name: Publish single self-contained Windows executable
+      - name: Publish portable program folder
         shell: pwsh
         run: |
-          Remove-Item publish -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item publish, package -Recurse -Force -ErrorAction SilentlyContinue
           dotnet publish src/PalworldHelper/PalworldHelper.csproj `
             --configuration Release `
             --runtime win-x64 `
@@ -71,20 +87,35 @@ jobs:
             -p:DebugType=None `
             -p:DebugSymbols=false `
             --output publish
+          Copy-Item palworld_breeding_results.default.json publish/palworld_breeding_results.default.json
+          $version = if ('${{ github.ref_type }}' -eq 'tag') { '${{ github.ref_name }}'.TrimStart('v') } else { '0.6.0' }
+          $files = @(Get-ChildItem publish -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path publish).Path.Length + 1).Replace('\','/') })
+          $files += 'palworldhelper.manifest.json'
+          $files | ConvertTo-Json | Set-Content publish/palworldhelper.manifest.json -Encoding utf8
+          New-Item -ItemType Directory package | Out-Null
+          Compress-Archive -Path publish/* -DestinationPath package/PalworldHelper-win-x64.zip -CompressionLevel Optimal
 
-      - name: Verify single-file release
+      - name: Verify package
         shell: pwsh
         run: |
-          $files = @(Get-ChildItem publish -File)
-          Write-Host 'Published files:'
-          $files | ForEach-Object { Write-Host $_.Name }
-          if ($files.Count -ne 1 -or $files[0].Name -ne 'PalworldHelper.exe') {
-            throw "Expected exactly one published file named PalworldHelper.exe, found $($files.Count)."
+          $executables = @(Get-ChildItem publish -Recurse -File -Filter *.exe)
+          if ($executables.Count -ne 1 -or $executables[0].Name -ne 'PalworldHelper.exe') {
+            throw "Expected exactly one EXE named PalworldHelper.exe, found: $($executables.Name -join ', ')"
+          }
+          foreach ($required in @('PalworldHelper.exe','palworld_breeding_results.default.json','palworldhelper.manifest.json')) {
+            if (-not (Test-Path (Join-Path publish $required))) { throw "Missing required package file: $required" }
           }
 
-      - name: Upload Windows artifact
+      - name: Upload Windows package artifact
         uses: actions/upload-artifact@v4
         with:
           name: PalworldHelper-win-x64
-          path: publish/PalworldHelper.exe
+          path: package/PalworldHelper-win-x64.zip
           if-no-files-found: error
+
+      - name: Attach package to GitHub release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: package/PalworldHelper-win-x64.zip
+          generate_release_notes: true
