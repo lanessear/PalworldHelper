@@ -90,7 +90,7 @@ jobs:
           }
 
       - name: Upload Windows package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: PalworldHelper-win-x64
           path: package/PalworldHelper-win-x64.zip
