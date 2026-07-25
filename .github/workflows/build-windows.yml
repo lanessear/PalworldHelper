@@ -111,8 +111,53 @@ jobs:
           }
 
           $json = Get-Content $outputPath -Raw | ConvertFrom-Json
-          if ($json.pals.Count -ne 298) { throw "Default dataset contains $($json.pals.Count) Pal names instead of 298." }
-          if ($json.results.Count -ne 44551) { throw "Default dataset contains $($json.results.Count) results instead of 44,551." }
+          if ($json.pals.Count -ne 298) {
+            throw "Default dataset contains $($json.pals.Count) Pal names instead of 298."
+          }
+          if ($json.results.Count -ne 44551) {
+            throw "Source Default dataset contains $($json.results.Count) results instead of 44,551."
+          }
+
+          $selfBreedingRows = @($json.results | Where-Object { $_[0] -eq $_[1] })
+          $invalidSelfBreedingRows = @($selfBreedingRows | Where-Object { $_[2] -ne $_[0] })
+          if ($selfBreedingRows.Count -ne 298) {
+            throw "Expected 298 self-breeding rows, found $($selfBreedingRows.Count)."
+          }
+          if ($invalidSelfBreedingRows.Count -gt 0) {
+            throw "Found $($invalidSelfBreedingRows.Count) self-breeding rows where A + A does not produce A."
+          }
+
+          # This optimization applies only to the bundled Default file. Custom JSON files
+          # are loaded by the application exactly as provided by the user.
+          $json.results = @($json.results | Where-Object { $_[0] -ne $_[1] })
+          $json.uniqueBreedingResults = $json.results.Count
+          $json.successfulResults = $json.results.Count
+
+          if ($json.results.Count -ne 44253) {
+            throw "Optimized Default dataset contains $($json.results.Count) results instead of 44,253."
+          }
+          if (@($json.results | Where-Object { $_[0] -eq $_[1] }).Count -ne 0) {
+            throw "Optimized Default dataset still contains self-breeding rows."
+          }
+
+          $childIds = [Collections.Generic.HashSet[int]]::new()
+          foreach ($result in $json.results) {
+            [void]$childIds.Add([int]$result[2])
+          }
+          $unreachablePals = @(
+            0..($json.pals.Count - 1) |
+              Where-Object { -not $childIds.Contains([int]$_) } |
+              ForEach-Object { [string]$json.pals[$_] }
+          )
+          Write-Host "Pals that never occur as a breeding result with different parents ($($unreachablePals.Count)):"
+          $unreachablePals | ForEach-Object { Write-Host "  - $_" }
+
+          $json | ConvertTo-Json -Depth 10 -Compress | Set-Content $outputPath -Encoding utf8NoBOM -NoNewline
+
+          $optimizedJson = Get-Content $outputPath -Raw | ConvertFrom-Json
+          if ($optimizedJson.results.Count -ne 44253) {
+            throw "Written Default dataset contains $($optimizedJson.results.Count) results instead of 44,253."
+          }
 
       - name: Install Oodle-capable save parser
         shell: pwsh
