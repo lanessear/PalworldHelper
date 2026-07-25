@@ -98,7 +98,7 @@ jobs:
 
       - name: Attach package to GitHub release
         if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: package/PalworldHelper-win-x64.zip
           generate_release_notes: true
