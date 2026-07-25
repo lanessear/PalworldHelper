@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -77,7 +78,7 @@ public static class ApplicationMaintenanceService
         var executable = Environment.ProcessPath ?? Path.Combine(installDirectory, "PalworldHelper.exe");
         var archiveDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "PalworldHelper", "obsolete", DateTime.Now.ToString("yyyyMMdd-HHmmss"));
+            "PalworldHelper", "obsolete", DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
         var scriptPath = Path.Combine(root, "apply-update.ps1");
         var script = BuildUpdateScript(Environment.ProcessId, installDirectory, staging, archiveDirectory, executable, root);
         await File.WriteAllTextAsync(scriptPath, script, new UTF8Encoding(false), cancellationToken).ConfigureAwait(false);
