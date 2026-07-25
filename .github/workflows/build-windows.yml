@@ -59,16 +59,27 @@ jobs:
         run: dotnet build PalworldHelper.sln --configuration Release --no-restore
 
       - name: Publish single self-contained Windows executable
-        run: dotnet publish src/PalworldHelper/PalworldHelper.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish
+        shell: pwsh
+        run: |
+          Remove-Item publish -Recurse -Force -ErrorAction SilentlyContinue
+          dotnet publish src/PalworldHelper/PalworldHelper.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            --output publish
 
       - name: Verify single-file release
         shell: pwsh
         run: |
-          $files = Get-ChildItem publish -File
+          $files = @(Get-ChildItem publish -File)
+          Write-Host 'Published files:'
+          $files | ForEach-Object { Write-Host $_.Name }
           if ($files.Count -ne 1 -or $files[0].Name -ne 'PalworldHelper.exe') {
-            Write-Host 'Unexpected release files:'
-            $files | ForEach-Object { Write-Host $_.FullName }
-            exit 1
+            throw "Expected exactly one published file named PalworldHelper.exe, found $($files.Count)."
           }
 
       - name: Upload Windows artifact
