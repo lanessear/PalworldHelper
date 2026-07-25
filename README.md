@@ -18,7 +18,7 @@
 </tr>
 </table>
 
-**Quickstart v0.2 · Native Windows desktop application**
+**Native Windows desktop helper for Palworld saves and breeding routes**
 
 </div>
 
@@ -30,44 +30,35 @@ Human approval does not imply human authorship of the implementation.
 
 ## Current features
 
-- Manage any number of Palworld server profiles
-- Authenticate with a password or SSH private key
-- Test SFTP connectivity
-- Automatically search the server for `Level.sav`
-- Optionally use a manually configured remote save path
-- Download `Level.sav` over SFTP
-- Encrypt saved passwords with Windows DPAPI for the current Windows user
-- Load an existing `palworld_breeding_results.json` file
-- Select source and target Pals with searchable dropdowns
-- Calculate the shortest continuous breeding chain with breadth-first search
+- **Server profiles**: Save multiple Palworld server connections and switch between them quickly.
+- **Secure authentication**: Connect over SFTP with password or SSH key support; saved passwords are encrypted with Windows DPAPI for the current user.
+- **Save discovery and download**: Search the server for `Level.sav` automatically, use a manual remote path when needed, and download the save into the local app folder.
+- **Local save inspection**: Select a local `Level.sav`, see file metadata and raw preview data, and keep the selected path for the next launch.
+- **Bundled breeding data**: Ship the versioned repository dataset `palworld_breeding_results_v1.0_2026-07-24.json` next to the executable.
+- **Custom breeding data**: Load compatible custom breeding JSON files when you want to test another dataset.
+- **Breeding chain search**: Pick source and target Pals from searchable dropdowns and calculate the shortest continuous breeding route.
+- **Maintenance tools**: Check for updates, install a downloaded release, and uninstall local app data from inside the desktop app.
 
 ## Next development step
 
-The downloaded `Level.sav` is not yet parsed into players, owned Pals, and passive skills. Save download and automatic discovery are already implemented so the next step can focus on importing and testing a real dedicated-server save.
+The external Python save parser has been removed. The current native C# parser recognizes Palworld save containers and zlib/GVAS data, but full Oodle/GVAS character extraction is still the next major implementation step.
 
-## Download the Windows executable
+## Install
 
-Every commit to `main` automatically triggers a self-contained Windows build through GitHub Actions:
+Download the latest Windows ZIP from **Actions → Build Windows package** or from a tagged GitHub release, extract it, and start `PalworldHelper.exe`.
 
-1. Open **Actions → Build Windows EXE**.
-2. Select the newest successful workflow run.
-3. Download the `PalworldHelper-win-x64` artifact.
-4. Extract the ZIP file and start `PalworldHelper.exe`.
-
-The workflow can also be started manually with **Run workflow**.
-
-Neither Python nor the .NET SDK is required on the target computer.
+Keep the extracted files together. The default breeding dataset is loaded from the same folder as the executable.
 
 ## Breeding data
 
-On first launch, open **Breeding Chain → Select JSON** and choose `palworld_breeding_results.json`. Alternatively, place the file next to `PalworldHelper.exe`.
+The release package includes `palworld_breeding_results_v1.0_2026-07-24.json` as the default dataset. Use **Breeding Chain → Select JSON** only when you want to load a custom compatible dataset.
 
-## Local development
+## Build from source
 
-With the .NET 8 SDK installed:
+Run the Windows package build:
 
 ```powershell
 .\build-windows.ps1
 ```
 
-The resulting executable is written to `publish\PalworldHelper.exe`.
+The output is written to `publish\`.
