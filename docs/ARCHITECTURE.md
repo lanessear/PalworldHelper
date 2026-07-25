@@ -4,13 +4,10 @@ PalworldHelper uses a pragmatic clean architecture.
 
 ```mermaid
 flowchart LR
-  UI[PalworldHelper.App\nLocal API + Web UI] --> Core[PalworldHelper.Core\nDomain + Use-case contracts]
-  UI --> Data[PalworldHelper.Data\nSQLite persistence]
-  UI --> Import[PalworldHelper.SaveImport\nSSH + conversion]
-  Data --> Core
-  Import --> Core
+  UI[PalworldHelper\nWPF desktop app] --> Core[PalworldHelper.Core\nDomain + use-case contracts]
+  UI --> Import[WPF SFTP + save inspection]
+  UI --> DataFile[Default breeding JSON]
   Plugins[External plugins] --> PluginApi[Plugins.Abstractions]
-  UI --> PluginApi
 ```
 
 ## Dependency rules
@@ -18,12 +15,12 @@ flowchart LR
 - `Core` depends on no infrastructure project.
 - `Data` implements persistence contracts defined by `Core`.
 - `SaveImport` implements acquisition and conversion contracts defined by `Core`.
-- `App` composes all components and hosts the local UI.
+- `PalworldHelper` is the current WPF application and packaging target.
 - Plugin contracts remain deliberately small and stable.
 
 ## Local-first application model
 
-The executable starts an ASP.NET Core server bound to loopback, initializes SQLite, serves the frontend, and opens the default browser. It is not intended to expose its API to the network by default.
+The executable is a local Windows desktop application. Server credentials and save paths are stored locally; the default breeding dataset is shipped as a normal JSON file next to the executable.
 
 ## Data separation
 
