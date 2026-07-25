@@ -1,8 +1,11 @@
 using Microsoft.Win32;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 
 namespace PalworldHelper;
 
@@ -12,6 +15,9 @@ public partial class MainWindow : Window
     private readonly BreedingService _breeding = new();
     private readonly List<PassiveSkillOption> _passiveSkillOptions = PassiveSkillCatalog.Load().ToList();
     private readonly List<string> _selectedPassiveSkills = [];
+    private List<SavePalRow> _savePalRows = [];
+    private string? _selectedOwnerName;
+    private bool _showAllOwners;
     private AppSettings _settings;
     private ServerProfile? _current;
     private ParsedSave? _parsedSave;
@@ -215,6 +221,10 @@ public partial class MainWindow : Window
             SaveHexPreview.Text = string.Empty;
             SavePlayersList.ItemsSource = null;
             SavePalsList.ItemsSource = null;
+            _savePalRows = [];
+            _selectedOwnerName = null;
+            _showAllOwners = false;
+            SaveOwnerFilterStatus.Text = "Click a player to filter owned Pals.";
             SavePlayerCount.Text = "—";
             SavePalCount.Text = "—";
             SaveSpeciesCount.Text = "—";
@@ -364,6 +374,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         if (!HasParsedSave) return null;
         return _parsedSave!.Pals
+            .Where(IsRelevantOwner)
             .Where(pal => !string.IsNullOrWhiteSpace(pal.Species))
             .Select(pal => pal.Species.Trim())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -441,11 +452,21 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         var output = new System.Text.StringBuilder();
         output.AppendLine(CultureInfo.InvariantCulture, $"Target child: {child}");
-        output.AppendLine(HasParsedSave ? "Loaded save is active: only owned Pals are ranked as available." : "No save is active: all species are treated as available.");
+        output.AppendLine(HasParsedSave ? $"Loaded save is active: only Pals assigned to {CurrentOwnerName() ?? "the selected owner"} are ranked as available." : "No save is active: all species are treated as available.");
         output.AppendLine(desiredPassives.Count == 0 ? "Desired passives: none selected" : $"Desired passives: {string.Join(", ", desiredPassives)}");
         output.AppendLine();
 
-        foreach (var choice in choices.Take(20))
+        var ownerChoices = HasParsedSave
+            ? choices.Where(choice => GetBestOwnedPal(choice.Parent1, desiredPassives) is not null && GetBestOwnedPal(choice.Parent2, desiredPassives) is not null).ToList()
+            : choices.ToList();
+
+        if (ownerChoices.Count == 0)
+        {
+            ParentDetails.Text = $"No parent combinations for {child} are fully assigned to {CurrentOwnerName() ?? "the selected owner"}.";
+            return;
+        }
+
+        foreach (var choice in ownerChoices.Take(20))
         {
             var parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives);
             var parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives);
@@ -462,6 +483,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         if (!HasParsedSave) return null;
         return _parsedSave!.Pals
+            .Where(IsRelevantOwner)
             .Where(pal => pal.Species.Equals(species, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(pal => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)))
             .ThenByDescending(pal => pal.PassiveSkills.Count)
@@ -485,7 +507,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         if (_breeding.Names.Count == 0) return;
         var suffix = HasParsedSave
-            ? $" Save restriction active: {_parsedSave!.Pals.Select(p => p.Species).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0} owned species available."
+            ? $" Save restriction active: {_parsedSave!.Pals.Where(IsRelevantOwner).Select(p => p.Species).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0} owned species available for {CurrentOwnerName() ?? "the selected owner"}."
             : " No save restriction active: all Pals are treated as available.";
         BreedingStatus.Text = $"✓ Loaded {_breeding.ResultCount:N0} results and {_breeding.Names.Count:N0} Pal names.{suffix}";
     }
@@ -497,7 +519,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .Select(player => new SavePlayerRow(player.Name, player.Level, player.PlayerUid))
             .ToList();
 
-        var pals = save.Pals
+        _savePalRows = save.Pals
             .OrderBy(pal => pal.Owner, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(pal => pal.Species, StringComparer.CurrentCultureIgnoreCase)
             .ThenByDescending(pal => pal.Level)
@@ -511,9 +533,9 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .ToList();
 
         SavePlayersList.ItemsSource = players;
-        SavePalsList.ItemsSource = pals;
+        ApplyOwnerFilter();
         SavePlayerCount.Text = players.Count.ToString("N0", CultureInfo.CurrentCulture);
-        SavePalCount.Text = pals.Count.ToString("N0", CultureInfo.CurrentCulture);
+        SavePalCount.Text = _savePalRows.Count.ToString("N0", CultureInfo.CurrentCulture);
         SaveSpeciesCount.Text = save.Pals.Select(pal => pal.Species).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
         SavePassiveCount.Text = save.Pals.SelectMany(pal => pal.PassiveSkills).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
     }
@@ -534,5 +556,101 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .OrderByDescending(skill => skill.Rank)
             .ThenBy(skill => skill.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
+    }
+
+    private string? CurrentOwnerName()
+    {
+        if (_showAllOwners) return null;
+        if (!string.IsNullOrWhiteSpace(_selectedOwnerName)) return _selectedOwnerName;
+        var configured = PlayerName.Text?.Trim();
+        return string.IsNullOrWhiteSpace(configured) ? null : configured;
+    }
+
+    private bool IsRelevantOwner(ParsedPal pal)
+    {
+        var owner = CurrentOwnerName();
+        return string.IsNullOrWhiteSpace(owner) || pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsRelevantOwner(SavePalRow pal)
+    {
+        var owner = CurrentOwnerName();
+        return string.IsNullOrWhiteSpace(owner) || pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void SavePlayersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _selectedOwnerName = SavePlayersList.SelectedItem is SavePlayerRow player ? player.Name : null;
+        _showAllOwners = false;
+        ApplyOwnerFilter();
+        UpdateBreedingAvailabilityStatus();
+        RefreshSelectedParentDetails();
+    }
+
+    private void ShowAllOwners_Click(object sender, RoutedEventArgs e)
+    {
+        _selectedOwnerName = null;
+        _showAllOwners = true;
+        SavePlayersList.SelectedItem = null;
+        ApplyOwnerFilter();
+        UpdateBreedingAvailabilityStatus();
+        RefreshSelectedParentDetails();
+    }
+
+    private void ApplyOwnerFilter()
+    {
+        var owner = CurrentOwnerName();
+        var rows = string.IsNullOrWhiteSpace(owner)
+            ? _savePalRows
+            : _savePalRows.Where(IsRelevantOwner).ToList();
+
+        SavePalsList.ItemsSource = rows;
+        SaveOwnerFilterStatus.Text = string.IsNullOrWhiteSpace(owner)
+            ? "Showing all owners."
+            : $"Showing Pals assigned to {owner}.";
+    }
+
+    private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not GridViewColumnHeader { Column: not null } header) return;
+        var property = header.Column.Header?.ToString();
+        if (string.IsNullOrWhiteSpace(property)) return;
+        if (property.Equals("Passives", StringComparison.OrdinalIgnoreCase)) property = nameof(SavePalRow.PassiveSkills);
+        if (property.Equals("UID", StringComparison.OrdinalIgnoreCase)) property = nameof(SavePlayerRow.PlayerUid);
+
+        var listView = sender as ListView ?? FindVisualParent<ListView>(header);
+        if (listView?.ItemsSource is null) return;
+
+        var view = CollectionViewSource.GetDefaultView(listView.ItemsSource);
+        var direction = ListSortDirection.Ascending;
+        if (view.SortDescriptions.Count > 0 && view.SortDescriptions[0].PropertyName.Equals(property, StringComparison.OrdinalIgnoreCase))
+        {
+            direction = view.SortDescriptions[0].Direction == ListSortDirection.Ascending
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+        }
+
+        view.SortDescriptions.Clear();
+        view.SortDescriptions.Add(new SortDescription(property, direction));
+        view.Refresh();
+    }
+
+    private void RefreshSelectedParentDetails()
+    {
+        var text = ResultList.SelectedItem?.ToString();
+        if (string.IsNullOrWhiteSpace(text)) return;
+        var child = text.Contains('→') ? text.Split('→').Last().Trim() : TargetPal.Text?.Trim();
+        if (!string.IsNullOrWhiteSpace(child)) ShowParentChoices(child);
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+    {
+        while (child is not null)
+        {
+            if (child is T match) return match;
+            child = VisualTreeHelper.GetParent(child);
+        }
+
+        return null;
     }
 }
