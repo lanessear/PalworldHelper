@@ -1,16 +1,18 @@
-name: Build Windows EXE
+name: Build Windows package
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-windows-${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Windows EXE
+    name: Build Windows package
     runs-on: windows-latest
 
     steps:
@@ -30,16 +32,24 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Verify default breeding JSON
+        shell: pwsh
+        run: |
+          $path = Join-Path $PWD 'palworld_breeding_results.default.json'
+          if (-not (Test-Path $path)) {
+            throw "Missing repository file: palworld_breeding_results.default.json"
+          }
 
-      - name: Install parser build dependencies
-        run: python -m pip install --disable-pip-version-check palworld-save-tools==0.23.0 pyinstaller==6.14.2
-
-      - name: Build save parser helper
-        run: python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palworld_save_tools tools/save_parser/palworld_save_parser.py
+          $json = Get-Content $path -Raw | ConvertFrom-Json
+          if ($json.pals.Count -ne 298) {
+            throw "Default dataset contains $($json.pals.Count) Pal names instead of 298."
+          }
+          if ($json.results.Count -ne 44253) {
+            throw "Default dataset contains $($json.results.Count) results instead of 44,253."
+          }
+          if (@($json.results | Where-Object { $_[0] -eq $_[1] }).Count -ne 0) {
+            throw "Default dataset still contains self-breeding rows."
+          }
 
       - name: Restore dependencies
         run: dotnet restore PalworldHelper.sln
@@ -47,16 +57,48 @@ jobs:
       - name: Build solution
         run: dotnet build PalworldHelper.sln --configuration Release --no-restore
 
-      - name: Publish self-contained Windows executable
-        run: dotnet publish src/PalworldHelper/PalworldHelper.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output publish
+      - name: Publish portable program folder
+        shell: pwsh
+        run: |
+          Remove-Item publish, package -Recurse -Force -ErrorAction SilentlyContinue
+          dotnet publish src/PalworldHelper/PalworldHelper.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            --output publish
 
-      - name: Add parser to release
-        run: Copy-Item dist/PalworldSaveParser.exe publish/PalworldSaveParser.exe
+          $files = @(Get-ChildItem publish -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path publish).Path.Length + 1).Replace('\','/') })
+          $files += 'palworldhelper.manifest.json'
+          $files | ConvertTo-Json | Set-Content publish/palworldhelper.manifest.json -Encoding utf8
 
-      - name: Upload Windows artifact
-        if: github.event_name != 'pull_request'
+          New-Item -ItemType Directory package | Out-Null
+          Compress-Archive -Path publish/* -DestinationPath package/PalworldHelper-win-x64.zip -CompressionLevel Optimal
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          $executables = @(Get-ChildItem publish -Recurse -File -Filter *.exe)
+          if ($executables.Count -ne 1 -or $executables[0].Name -ne 'PalworldHelper.exe') {
+            throw "Expected exactly one EXE named PalworldHelper.exe, found: $($executables.Name -join ', ')"
+          }
+          foreach ($required in @('PalworldHelper.exe','palworld_breeding_results.default.json','palworldhelper.manifest.json')) {
+            if (-not (Test-Path (Join-Path publish $required))) { throw "Missing required package file: $required" }
+          }
+
+      - name: Upload Windows package artifact
         uses: actions/upload-artifact@v4
         with:
           name: PalworldHelper-win-x64
-          path: publish/**
+          path: package/PalworldHelper-win-x64.zip
           if-no-files-found: error
+
+      - name: Attach package to GitHub release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: package/PalworldHelper-win-x64.zip
+          generate_release_notes: true

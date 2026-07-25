@@ -5,32 +5,94 @@ namespace PalworldHelper;
 
 public sealed class BreedingService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
     private readonly Dictionary<string, string> _names = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<(string mate, string child)>> _graph = new(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyList<string> Names => _names.Values.OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase).ToList();
     public int ResultCount { get; private set; }
 
     public void Load(string path)
     {
-        var json = File.ReadAllText(path);
-        var payload = JsonSerializer.Deserialize<BreedingPayload>(json, JsonOptions)
-            ?? throw new InvalidDataException("JSON konnte nicht gelesen werden.");
-        _names.Clear(); _graph.Clear(); ResultCount = 0;
-        foreach (var r in payload.Results)
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new InvalidDataException("The breeding JSON must contain a JSON object.");
+
+        _names.Clear();
+        _graph.Clear();
+        ResultCount = 0;
+
+        if (!root.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("The breeding JSON does not contain a results array.");
+
+        // Compact repository format: pals/names contains the Pal names and every result is
+        // [parent1Index, parent2Index, childIndex].
+        if (TryReadNameTable(root, out var nameTable) && IsCompactResultArray(results))
         {
-            if (string.IsNullOrWhiteSpace(r.Parent1) || string.IsNullOrWhiteSpace(r.Parent2) || string.IsNullOrWhiteSpace(r.Child)) continue;
-            AddName(r.Parent1); AddName(r.Parent2); AddName(r.Child);
-            AddEdge(r.Parent1, r.Parent2, r.Child);
-            if (!r.Parent1.Equals(r.Parent2, StringComparison.OrdinalIgnoreCase)) AddEdge(r.Parent2, r.Parent1, r.Child);
-            ResultCount++;
+            foreach (var result in results.EnumerateArray())
+            {
+                if (result.GetArrayLength() < 3) continue;
+                var indexes = result.EnumerateArray().Take(3).Select(x => x.GetInt32()).ToArray();
+                if (indexes.Any(x => x < 0 || x >= nameTable.Count)) continue;
+                AddResult(nameTable[indexes[0]], nameTable[indexes[1]], nameTable[indexes[2]]);
+            }
+            return;
         }
+
+        // Original IndexedDB/object format.
+        foreach (var result in results.EnumerateArray())
+        {
+            if (result.ValueKind != JsonValueKind.Object) continue;
+            var parent1 = ReadString(result, "parent1", "Parent1");
+            var parent2 = ReadString(result, "parent2", "Parent2");
+            var child = ReadString(result, "child", "Child");
+            AddResult(parent1, parent2, child);
+        }
+
+        if (ResultCount == 0)
+            throw new InvalidDataException("No valid breeding combinations were found. Supported formats are the IndexedDB export and the compact repository JSON.");
+    }
+
+    private static bool TryReadNameTable(JsonElement root, out List<string> names)
+    {
+        names = [];
+        JsonElement table;
+        if (!(root.TryGetProperty("pals", out table) || root.TryGetProperty("names", out table)) || table.ValueKind != JsonValueKind.Array)
+            return false;
+
+        names = table.EnumerateArray()
+            .Where(x => x.ValueKind == JsonValueKind.String)
+            .Select(x => x.GetString()?.Trim() ?? string.Empty)
+            .ToList();
+        return names.Count > 0;
+    }
+
+    private static bool IsCompactResultArray(JsonElement results)
+    {
+        foreach (var item in results.EnumerateArray())
+            return item.ValueKind == JsonValueKind.Array;
+        return false;
+    }
+
+    private static string ReadString(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var name in propertyNames)
+            if (element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String)
+                return value.GetString()?.Trim() ?? string.Empty;
+        return string.Empty;
+    }
+
+    private void AddResult(string parent1, string parent2, string child)
+    {
+        if (string.IsNullOrWhiteSpace(parent1) || string.IsNullOrWhiteSpace(parent2) || string.IsNullOrWhiteSpace(child)) return;
+        AddName(parent1); AddName(parent2); AddName(child);
+        AddEdge(parent1, parent2, child);
+        if (!parent1.Equals(parent2, StringComparison.OrdinalIgnoreCase)) AddEdge(parent2, parent1, child);
+        ResultCount++;
     }
 
     private void AddName(string name) => _names.TryAdd(name.Trim(), name.Trim());
+
     private void AddEdge(string from, string mate, string child)
     {
         if (!_graph.TryGetValue(from.Trim(), out var edges)) _graph[from.Trim()] = edges = [];

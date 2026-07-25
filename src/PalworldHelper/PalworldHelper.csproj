@@ -7,9 +7,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PalworldHelper</AssemblyName>
     <RootNamespace>PalworldHelper</RootNamespace>
+    <Version>0.6.0</Version>
+    <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <FileVersion>0.6.0.0</FileVersion>
     <ApplicationIcon />
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SSH.NET" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../palworld_breeding_results.default.json"
+             Link="palworld_breeding_results.default.json"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

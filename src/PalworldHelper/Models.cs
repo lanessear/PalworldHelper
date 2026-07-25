@@ -5,6 +5,7 @@ public sealed class AppSettings
     public List<ServerProfile> Profiles { get; set; } = [];
     public string? SelectedProfileId { get; set; }
     public string? BreedingJsonPath { get; set; }
+    public string? LocalSavePath { get; set; }
 }
 
 public sealed class ServerProfile
