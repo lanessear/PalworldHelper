@@ -52,6 +52,25 @@ jobs:
             throw "Default dataset contains $selfBreedingRows self-breeding rows instead of 298."
           }
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Oodle-capable save parser
+        shell: pwsh
+        run: |
+          Remove-Item parser-upstream, dist, build -Recurse -Force -ErrorAction SilentlyContinue
+          git clone --depth 1 https://github.com/deafdudecomputers/PalworldSaveTools.git parser-upstream
+          python -m pip install --disable-pip-version-check pyinstaller==6.14.2
+          python -m pip install ./parser-upstream/src/palsav/palooz
+          python -m pip install ./parser-upstream/src/palsav
+
+      - name: Build save parser
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --name PalworldSaveParser --collect-all palsav --collect-all palooz tools/save_parser/palworld_save_parser.py
+
       - name: Restore dependencies
         run: dotnet restore PalworldHelper.sln
 
@@ -72,6 +91,9 @@ jobs:
             -p:DebugSymbols=false `
             --output publish
 
+          New-Item -ItemType Directory -Force publish/parser | Out-Null
+          Copy-Item dist/PalworldSaveParser.exe publish/parser/PalworldSaveParser.exe
+
           $files = @(Get-ChildItem publish -Recurse -File | ForEach-Object { $_.FullName.Substring((Resolve-Path publish).Path.Length + 1).Replace('\','/') })
           $files += 'palworldhelper.manifest.json'
           $files | ConvertTo-Json | Set-Content publish/palworldhelper.manifest.json -Encoding utf8
@@ -82,11 +104,7 @@ jobs:
       - name: Verify package
         shell: pwsh
         run: |
-          $executables = @(Get-ChildItem publish -Recurse -File -Filter *.exe)
-          if ($executables.Count -ne 1 -or $executables[0].Name -ne 'PalworldHelper.exe') {
-            throw "Expected exactly one EXE named PalworldHelper.exe, found: $($executables.Name -join ', ')"
-          }
-          foreach ($required in @('PalworldHelper.exe','palworld_breeding_results_v1.0_2026-07-24.json','palworldhelper.manifest.json')) {
+          foreach ($required in @('PalworldHelper.exe','parser/PalworldSaveParser.exe','palworld_breeding_results_v1.0_2026-07-24.json','palworldhelper.manifest.json')) {
             if (-not (Test-Path (Join-Path publish $required))) { throw "Missing required package file: $required" }
           }
 

@@ -33,7 +33,7 @@ Human approval does not imply human authorship of the implementation.
 - **Server profiles**: Save multiple Palworld server connections and switch between them quickly.
 - **Secure authentication**: Connect over SFTP with password or SSH key support; saved passwords are encrypted with Windows DPAPI for the current user.
 - **Save discovery and download**: Search the server for `Level.sav` automatically, use a manual remote path when needed, and download the save into the local app folder.
-- **Local save inspection**: Select a local `Level.sav`, see file metadata and raw preview data, and keep the selected path for the next launch.
+- **Save parsing and inspection**: Select a local `Level.sav`, parse players, owned Pals, levels, genders, and passive skills, and keep the selected path for the next launch.
 - **Bundled breeding data**: Ship the versioned repository dataset `palworld_breeding_results_v1.0_2026-07-24.json` next to the executable.
 - **Custom breeding data**: Load compatible custom breeding JSON files when you want to test another dataset.
 - **Breeding chain search**: Pick source and target Pals from searchable dropdowns and calculate the shortest continuous breeding route.
@@ -41,13 +41,13 @@ Human approval does not imply human authorship of the implementation.
 
 ## Next development step
 
-The external Python save parser has been removed. The current native C# parser recognizes Palworld save containers and zlib/GVAS data, but full Oodle/GVAS character extraction is still the next major implementation step.
+The save parser is currently shipped as a bundled helper in the `parser` folder next to the executable. The long-term goal remains a native C# parser so the helper can eventually disappear.
 
 ## Install
 
 Download the latest Windows ZIP from **Actions → Build Windows package** or from a tagged GitHub release, extract it, and start `PalworldHelper.exe`.
 
-Keep the extracted files together. The default breeding dataset is loaded from the same folder as the executable.
+Keep the extracted files together. The default breeding dataset is loaded from the same folder as the executable, and save parsing uses the bundled `parser` folder.
 
 ## Breeding data
 

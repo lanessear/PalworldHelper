@@ -1,8 +1,6 @@
-using System.Buffers.Binary;
-using System.Globalization;
+using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Text;
+using System.Text.Json;
 
 namespace PalworldHelper;
 
@@ -38,100 +36,53 @@ public sealed class ParsedPal
 
 public static class SaveParserService
 {
-    private const string GvasMagic = "GVAS";
-    private const string OodleMagic = "PlM";
-    private const string ZlibMagic = "PlZ";
-    private const int HeaderLength = 12;
-    private const int ConsoleHeaderPrefixLength = 12;
+    private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
     public static async Task<ParsedSave> ParseAsync(string savePath)
     {
         if (string.IsNullOrWhiteSpace(savePath)) throw new ArgumentException("A save file path is required.", nameof(savePath));
         if (!File.Exists(savePath)) throw new FileNotFoundException("The selected save file does not exist.", savePath);
 
-        var saveBytes = await File.ReadAllBytesAsync(savePath).ConfigureAwait(false);
-        var container = PalworldSaveContainer.Read(saveBytes);
-        var gvasBytes = container.Decompress();
-        if (!StartsWithMagic(gvasBytes, GvasMagic))
+        var parserPath = Path.Combine(AppContext.BaseDirectory, "parser", "PalworldSaveParser.exe");
+        if (!File.Exists(parserPath))
         {
-            throw new InvalidDataException("The decompressed save data does not start with a GVAS header.");
+            throw new FileNotFoundException(
+                "The Palworld save parser is missing. Re-extract the complete release package so the parser folder stays next to PalworldHelper.exe.",
+                parserPath);
         }
 
-        return new ParsedSave
+        var outputPath = Path.Combine(Path.GetTempPath(), $"PalworldHelper-{Guid.NewGuid():N}.json");
+        try
         {
-            Parser = "native-csharp",
-            SaveType = container.SaveType
-        };
-    }
-
-    private static bool StartsWithMagic(ReadOnlySpan<byte> bytes, string magic)
-    {
-        return bytes.Length >= magic.Length && Encoding.ASCII.GetString(bytes[..magic.Length]) == magic;
-    }
-
-    private sealed record PalworldSaveContainer(int UncompressedLength, int CompressedLength, string Magic, int SaveType, byte[] Body)
-    {
-        public static PalworldSaveContainer Read(byte[] saveBytes)
-        {
-            if (StartsWithMagic(saveBytes, GvasMagic))
+            using var process = new Process
             {
-                return new PalworldSaveContainer(saveBytes.Length, saveBytes.Length, GvasMagic, 0, saveBytes);
-            }
-
-            if (TryRead(saveBytes, 0, out var container)) return container;
-            if (TryRead(saveBytes, ConsoleHeaderPrefixLength, out container)) return container;
-
-            throw new InvalidDataException("The selected file is not a supported Palworld .sav container.");
-        }
-
-        public byte[] Decompress()
-        {
-            return Magic switch
-            {
-                GvasMagic => Body,
-                ZlibMagic when SaveType == 0x31 => Inflate(Body, UncompressedLength),
-                ZlibMagic when SaveType == 0x32 => Inflate(Inflate(Body, CompressedLength), UncompressedLength),
-                OodleMagic => throw new NotSupportedException("This save uses Oodle Mermaid compression (PlM). Native Oodle decompression is not available yet."),
-                _ => throw new InvalidDataException(string.Create(CultureInfo.InvariantCulture, $"Unsupported Palworld save container '{Magic}' with save type 0x{SaveType:X2}."))
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = parserPath,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                }
             };
-        }
-
-        private static bool TryRead(byte[] saveBytes, int offset, out PalworldSaveContainer container)
-        {
-            container = null!;
-            if (saveBytes.Length < offset + HeaderLength) return false;
-
-            var magic = Encoding.ASCII.GetString(saveBytes, offset + 8, 3);
-            if (magic is not (OodleMagic or ZlibMagic)) return false;
-
-            var uncompressedLength = BinaryPrimitives.ReadInt32LittleEndian(saveBytes.AsSpan(offset, sizeof(int)));
-            var compressedLength = BinaryPrimitives.ReadInt32LittleEndian(saveBytes.AsSpan(offset + 4, sizeof(int)));
-            var saveType = saveBytes[offset + 11];
-            var bodyOffset = offset + HeaderLength;
-            if (uncompressedLength <= 0 || compressedLength <= 0 || saveBytes.Length < bodyOffset + compressedLength)
+            process.StartInfo.ArgumentList.Add(savePath);
+            process.StartInfo.ArgumentList.Add(outputPath);
+            process.Start();
+            var stderrTask = process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync().ConfigureAwait(false);
+            var stderr = await stderrTask.ConfigureAwait(false);
+            if (process.ExitCode != 0)
             {
-                throw new InvalidDataException("The Palworld save container header is invalid or truncated.");
+                throw new InvalidDataException(string.IsNullOrWhiteSpace(stderr) ? $"Parser exited with code {process.ExitCode}." : stderr.Trim());
             }
 
-            var body = new byte[compressedLength];
-            Buffer.BlockCopy(saveBytes, bodyOffset, body, 0, compressedLength);
-            container = new PalworldSaveContainer(uncompressedLength, compressedLength, magic, saveType, body);
-            return true;
+            await using var input = File.OpenRead(outputPath);
+            return await JsonSerializer.DeserializeAsync<ParsedSave>(input, SerializerOptions).ConfigureAwait(false)
+                ?? throw new InvalidDataException("The parser returned no save data.");
         }
-
-        private static byte[] Inflate(byte[] compressed, int expectedLength)
+        finally
         {
-            using var input = new MemoryStream(compressed);
-            using var zlib = new ZLibStream(input, CompressionMode.Decompress);
-            using var output = expectedLength > 0 ? new MemoryStream(expectedLength) : new MemoryStream();
-            zlib.CopyTo(output);
-            var result = output.ToArray();
-            if (expectedLength > 0 && result.Length != expectedLength)
-            {
-                throw new InvalidDataException(string.Create(CultureInfo.InvariantCulture, $"Decompressed save size is {result.Length:N0} bytes, expected {expectedLength:N0} bytes."));
-            }
-
-            return result;
+            if (File.Exists(outputPath)) File.Delete(outputPath);
         }
     }
 }
