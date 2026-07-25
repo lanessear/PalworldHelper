@@ -40,16 +40,40 @@ jobs:
       - name: Reconstruct Default breeding JSON
         shell: pwsh
         run: |
-          $parts = Get-ChildItem src/PalworldHelper/Embedded/BreedingData/part*.txt | Sort-Object Name
-          if ($parts.Count -lt 15) { throw "Expected all 15 Default data parts, found $($parts.Count)." }
-          $base64 = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
-          $compressed = [Convert]::FromBase64String($base64)
-          $input = [IO.MemoryStream]::new($compressed)
+          $parts = @(Get-ChildItem src/PalworldHelper/Embedded/BreedingData/part*.txt | Sort-Object Name)
+          if ($parts.Count -ne 15) { throw "Expected exactly 15 Default data parts, found $($parts.Count)." }
+
+          $compressedPath = Join-Path $PWD 'palworld_breeding_results.default.json.gz'
+          $compressedOutput = [IO.File]::Create($compressedPath)
+          try {
+            foreach ($part in $parts) {
+              $text = (Get-Content $part.FullName -Raw).Trim().TrimStart([char]0xFEFF)
+              $text = $text -replace '\s', ''
+              if ($text -notmatch '^[A-Za-z0-9+/]*={0,2}$') {
+                throw "Default data part '$($part.Name)' contains invalid Base64 characters."
+              }
+              try {
+                $bytes = [Convert]::FromBase64String($text)
+              } catch {
+                throw "Default data part '$($part.Name)' is not valid Base64: $($_.Exception.Message)"
+              }
+              $compressedOutput.Write($bytes, 0, $bytes.Length)
+            }
+          } finally {
+            $compressedOutput.Dispose()
+          }
+
+          $input = [IO.File]::OpenRead($compressedPath)
           $gzip = [IO.Compression.GZipStream]::new($input, [IO.Compression.CompressionMode]::Decompress)
           $outputPath = Join-Path $PWD 'palworld_breeding_results.default.json'
           $output = [IO.File]::Create($outputPath)
-          $gzip.CopyTo($output)
-          $output.Dispose(); $gzip.Dispose(); $input.Dispose()
+          try {
+            $gzip.CopyTo($output)
+          } finally {
+            $output.Dispose(); $gzip.Dispose(); $input.Dispose()
+          }
+          Remove-Item $compressedPath -Force
+
           $json = Get-Content $outputPath -Raw | ConvertFrom-Json
           if ($json.results.Count -ne 44551) { throw "Default dataset contains $($json.results.Count) results instead of 44,551." }
 
