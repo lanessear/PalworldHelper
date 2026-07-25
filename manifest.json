@@ -1,0 +1,28 @@
+{
+  "pals": 298,
+  "sourceResults": 44551,
+  "removedSelfBreedingRows": 298,
+  "defaultResults": 44253,
+  "base64Length": 215048,
+  "gzipBytes": 161284,
+  "jsonBytes": 574673,
+  "gzipSha256": "ae292cc8f8b0db54e5c4462507e39274654f78f13c613c23d9b23c910f439934",
+  "jsonSha256": "51ceacd65d7e484738d95f662362591888a30b50c756d7285a660c06ed4ac74f",
+  "partLengths": [
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    15000,
+    5048
+  ]
+}
