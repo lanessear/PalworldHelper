@@ -126,7 +126,7 @@
           <UniformGrid Grid.Row="1" Columns="4" Margin="0,14,0,14">
             <Border Style="{StaticResource StatCard}">
               <StackPanel>
-                <TextBlock Text="Players" Foreground="{StaticResource Muted}"/>
+                <TextBlock Text="Owners in view" Foreground="{StaticResource Muted}"/>
                 <TextBlock x:Name="SavePlayerCount" Text="—" FontSize="28" FontWeight="Bold"/>
               </StackPanel>
             </Border>

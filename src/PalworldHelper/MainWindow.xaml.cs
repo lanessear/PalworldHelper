@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly PalNameCatalog _palNames = PalNameCatalog.Load();
     private readonly List<PassiveSkillOption> _passiveSkillOptions = PassiveSkillCatalog.Load().ToList();
     private readonly List<string> _selectedPassiveSkills = [];
+    private List<SavePlayerRow> _savePlayerRows = [];
     private List<SavePalRow> _savePalRows = [];
     private string? _selectedOwnerName;
     private bool _showAllOwners;
@@ -224,6 +225,7 @@ public partial class MainWindow : Window
             SaveHexPreview.Text = string.Empty;
             SavePlayersList.ItemsSource = null;
             SavePalsList.ItemsSource = null;
+            _savePlayerRows = [];
             _savePalRows = [];
             _selectedOwnerName = null;
             _showAllOwners = false;
@@ -757,7 +759,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
     private void PopulateSaveOverview(ParsedSave save)
     {
-        var players = save.Players
+        _savePlayerRows = save.Players
             .OrderBy(player => player.Name, StringComparer.CurrentCultureIgnoreCase)
             .Select(player => new SavePlayerRow(player.Name, player.Level, player.PlayerUid))
             .ToList();
@@ -776,12 +778,8 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 pal.PassiveSkills.Count == 0 ? "—" : string.Join(", ", pal.PassiveSkills)))
             .ToList();
 
-        SavePlayersList.ItemsSource = players;
+        SavePlayersList.ItemsSource = _savePlayerRows;
         ApplyOwnerFilter();
-        SavePlayerCount.Text = players.Count.ToString("N0", CultureInfo.CurrentCulture);
-        SavePalCount.Text = _savePalRows.Count.ToString("N0", CultureInfo.CurrentCulture);
-        SaveSpeciesCount.Text = save.Pals.Select(pal => pal.Species).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
-        SavePassiveCount.Text = save.Pals.SelectMany(pal => pal.PassiveSkills).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString("N0", CultureInfo.CurrentCulture);
     }
 
     private void AddUnknownPassiveSkillsFromSave(ParsedSave save)
@@ -849,9 +847,32 @@ The compact format may use "names" instead of "pals". Every result must contain 
             : _savePalRows.Where(IsRelevantOwner).ToList();
 
         SavePalsList.ItemsSource = rows;
+        UpdateSaveStatCards(rows, owner);
         SaveOwnerFilterStatus.Text = string.IsNullOrWhiteSpace(owner)
             ? "Showing all owners."
             : $"Showing Pals assigned to {owner}.";
+    }
+
+    private void UpdateSaveStatCards(IReadOnlyCollection<SavePalRow> rows, string? owner)
+    {
+        var ownerCount = string.IsNullOrWhiteSpace(owner)
+            ? _savePlayerRows.Count
+            : _savePlayerRows.Any(player => player.Name.Equals(owner, StringComparison.OrdinalIgnoreCase)) ? 1 : 0;
+
+        SavePlayerCount.Text = ownerCount.ToString("N0", CultureInfo.CurrentCulture);
+        SavePalCount.Text = rows.Count.ToString("N0", CultureInfo.CurrentCulture);
+        SaveSpeciesCount.Text = rows
+            .Select(pal => pal.Species)
+            .Where(species => !string.IsNullOrWhiteSpace(species))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count()
+            .ToString("N0", CultureInfo.CurrentCulture);
+        SavePassiveCount.Text = rows
+            .SelectMany(pal => pal.PassiveSkills.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(skill => skill.Length > 0 && skill != "—")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count()
+            .ToString("N0", CultureInfo.CurrentCulture);
     }
 
     private void GridViewColumnHeader_Click(object sender, RoutedEventArgs e)
