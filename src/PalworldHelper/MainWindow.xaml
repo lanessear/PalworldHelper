@@ -12,6 +12,7 @@
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
@@ -57,23 +58,111 @@
                    Foreground="{StaticResource Muted}"
                    FontSize="15"
                    Margin="0,4,0,0"/>
+        <WrapPanel Margin="0,12,0,0">
+          <Border Style="{StaticResource Pill}">
+            <TextBlock Text="Local-first"/>
+          </Border>
+          <Border Style="{StaticResource Pill}" Background="{StaticResource PrimarySoft}">
+            <TextBlock Text="Save-aware breeding"/>
+          </Border>
+          <Border Style="{StaticResource Pill}" Background="{StaticResource SuccessSoft}">
+            <TextBlock Text="Cached parsing"/>
+          </Border>
+        </WrapPanel>
       </StackPanel>
       <Border Grid.Column="1"
               Style="{StaticResource Card}"
               Background="{StaticResource AccentSoft}"
               Padding="14,10"
               VerticalAlignment="Center">
-        <StackPanel Orientation="Horizontal">
-          <TextBlock Text="Recommended flow:"
-                     FontWeight="SemiBold"
-                     Margin="0,0,6,0"/>
-          <TextBlock Text="Save Data → Breeding Chain → Parent Details"
-                     Foreground="{StaticResource Muted}"/>
+        <StackPanel>
+          <TextBlock Text="Command center"
+                     FontWeight="SemiBold"/>
+          <TextBlock Text="Start with a save, then plan breeding."
+                     Foreground="{StaticResource Muted}"
+                     Margin="0,3,0,6"/>
+          <WrapPanel>
+            <Button Content="Load save"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="GoToSaveData_Click"/>
+            <Button Content="Plan breeding"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="GoToBreeding_Click"/>
+            <Button Content="Debug"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="GoToMaintenance_Click"/>
+          </WrapPanel>
         </StackPanel>
       </Border>
     </Grid>
 
-    <TabControl Grid.Row="2"
+    <UniformGrid Grid.Row="2"
+                 Columns="4"
+                 Margin="0,0,0,16">
+      <Border Style="{StaticResource DashboardCard}">
+        <StackPanel>
+          <TextBlock Text="Save source" Foreground="{StaticResource Muted}"/>
+          <TextBlock x:Name="DashboardSaveStatus"
+                     Text="No save loaded"
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+          <TextBlock x:Name="DashboardCacheStatus"
+                     Text="Select or auto-find Level.sav"
+                     Foreground="{StaticResource Muted}"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource DashboardCard}">
+        <StackPanel>
+          <TextBlock Text="Owner focus" Foreground="{StaticResource Muted}"/>
+          <TextBlock x:Name="DashboardOwnerStatus"
+                     Text="All owners"
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+          <TextBlock Text="Click a player to filter owned Pals."
+                     Foreground="{StaticResource Muted}"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource DashboardCard}">
+        <StackPanel>
+          <TextBlock Text="Breeding data" Foreground="{StaticResource Muted}"/>
+          <TextBlock x:Name="DashboardBreedingStatus"
+                     Text="Loading default data"
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+          <TextBlock Text="Default data is usually enough."
+                     Foreground="{StaticResource Muted}"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource DashboardCard}" Margin="0">
+        <StackPanel>
+          <TextBlock Text="Next best action" Foreground="{StaticResource Muted}"/>
+          <TextBlock x:Name="DashboardNextAction"
+                     Text="Load a save or plan without restrictions."
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+          <Button Content="Open Breeding Chain"
+                  Style="{StaticResource SecondaryButton}"
+                  Click="GoToBreeding_Click"/>
+        </StackPanel>
+      </Border>
+    </UniformGrid>
+
+    <TabControl x:Name="MainTabs"
+                Grid.Row="3"
                 Background="{StaticResource Panel}"
                 BorderBrush="{StaticResource Border}">
       <TabItem Header="Save Data">
@@ -113,12 +202,15 @@
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Margin="8,0,0,0">
-	                  <Button Content="Find automatically"
-	                          Click="FindLocalSave_Click"/>
-	                  <Button Content="Refresh save data"
-	                          Click="RefreshSaveData_Click"/>
-	                  <Button Content="Select Level.sav"
-	                          Click="PickLocalSave_Click"/>
+		                  <Button Content="Find automatically"
+                              Style="{StaticResource PrimaryButton}"
+		                          Click="FindLocalSave_Click"/>
+		                  <Button Content="Refresh save data"
+                              Style="{StaticResource SecondaryButton}"
+		                          Click="RefreshSaveData_Click"/>
+		                  <Button Content="Select Level.sav"
+                              Style="{StaticResource SecondaryButton}"
+		                          Click="PickLocalSave_Click"/>
                 </StackPanel>
                 <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
               </DockPanel>
@@ -624,7 +716,7 @@
       </TabItem>
     </TabControl>
 
-    <DockPanel Grid.Row="3" Margin="0,12,0,0">
+    <DockPanel Grid.Row="4" Margin="0,12,0,0">
       <TextBlock DockPanel.Dock="Left"
                  Foreground="{StaticResource Muted}"
                  Text="PalworldHelper v0.6 · Settings are stored under %LOCALAPPDATA%\PalworldHelper"/>

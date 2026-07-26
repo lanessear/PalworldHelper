@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         RefreshProfiles();
 
         LoadInitialBreedingData();
+        UpdateDashboardStatus();
 
         if (!string.IsNullOrWhiteSpace(_settings.LocalSavePath) && File.Exists(_settings.LocalSavePath))
         {
@@ -229,6 +230,12 @@ public partial class MainWindow : Window
         await InspectSaveAsync(LocalSavePath.Text, persistPath: false, forceRefresh: true);
     }
 
+    private void GoToSaveData_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 0;
+
+    private void GoToBreeding_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 1;
+
+    private void GoToMaintenance_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 3;
+
     private async void FindLocalSave_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -308,6 +315,8 @@ public partial class MainWindow : Window
             SaveStatus.Text = forceRefresh
                 ? "Refreshing save cache and parsing save file …"
                 : "Reading save data …";
+            DashboardSaveStatus.Text = "Loading save …";
+            DashboardCacheStatus.Text = forceRefresh ? "Refreshing cache" : "Checking cache";
             SaveMetadata.Text = string.Empty;
             SaveHexPreview.Text = string.Empty;
             SavePlayersList.ItemsSource = null;
@@ -338,12 +347,14 @@ public partial class MainWindow : Window
                 ? "✓ Save file loaded from cache. This path will be restored on the next start."
                 : "✓ Save file parsed and cached. This path will be restored on the next start.";
             UpdateBreedingAvailabilityStatus();
+            UpdateDashboardStatus(result.CacheHit);
         }
         catch (Exception ex)
         {
             _parsedSave = null;
             UpdateBreedingAvailabilityStatus();
             SaveStatus.Text = "✗ " + ex.Message;
+            UpdateDashboardStatus();
         }
     }
 
@@ -413,6 +424,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             _settings.BreedingJsonPath = path;
             _settingsService.Save(_settings);
             UpdateBreedingAvailabilityStatus();
+            UpdateDashboardStatus();
         }
         catch (Exception ex)
         {
@@ -1015,6 +1027,30 @@ The compact format may use "names" instead of "pals". Every result must contain 
             ? $" Save restriction active: {_parsedSave!.Pals.Where(IsRelevantOwner).Select(p => p.Species).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0} owned species available for {CurrentOwnerName() ?? "the selected owner"}."
             : " No save restriction active: all Pals are treated as available.";
         BreedingStatus.Text = $"✓ Loaded {_breeding.ResultCount:N0} results and {_breeding.Names.Count:N0} Pal names.{suffix}";
+        UpdateDashboardStatus();
+    }
+
+    private void UpdateDashboardStatus(bool? cacheHit = null)
+    {
+        DashboardSaveStatus.Text = HasParsedSave
+            ? $"{_parsedSave!.Pals.Count:N0} Pals loaded"
+            : "No save loaded";
+        DashboardCacheStatus.Text = cacheHit switch
+        {
+            true => "Loaded from cache",
+            false => "Parsed and cached",
+            _ when !string.IsNullOrWhiteSpace(LocalSavePath.Text) => "Save path remembered",
+            _ => "Select or auto-find Level.sav"
+        };
+
+        var owner = CurrentOwnerName();
+        DashboardOwnerStatus.Text = string.IsNullOrWhiteSpace(owner) ? "All owners" : owner;
+        DashboardBreedingStatus.Text = _breeding.Names.Count == 0
+            ? "No breeding data"
+            : $"{_breeding.Names.Count:N0} Pals · {_breeding.ResultCount:N0} results";
+        DashboardNextAction.Text = HasParsedSave
+            ? "Pick a child Pal and find the best chain."
+            : "Load a save or plan without restrictions.";
     }
 
     private void PopulateSaveOverview(ParsedSave save)
@@ -1133,6 +1169,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         SaveOwnerFilterStatus.Text = string.IsNullOrWhiteSpace(owner)
             ? "Showing all owners."
             : $"Showing Pals assigned to {owner}.";
+        UpdateDashboardStatus();
     }
 
     private void UpdateSaveStatCards(List<SavePalRow> rows, string? owner)
