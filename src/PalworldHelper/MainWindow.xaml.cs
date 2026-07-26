@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private readonly SettingsService _settingsService = new();
     private readonly BreedingService _breeding = new();
     private readonly List<PassiveSkillOption> _passiveSkillOptions = PassiveSkillCatalog.Load().ToList();
+    private readonly Dictionary<string, PassiveSkillOption> _passiveSkillAliases = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _selectedPassiveSkills = [];
     private List<SavePalRow> _savePalRows = [];
     private string? _selectedOwnerName;
@@ -26,6 +27,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = _settingsService.Load();
+        RebuildPassiveSkillAliases();
         PassiveSkillPicker.ItemsSource = _passiveSkillOptions;
         RefreshProfiles();
 
@@ -485,7 +487,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return _parsedSave!.Pals
             .Where(IsRelevantOwner)
             .Where(pal => pal.Species.Equals(species, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(pal => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)))
+            .OrderByDescending(pal => desiredPassives.Count(skill => HasPassiveSkill(pal, skill)))
             .ThenByDescending(pal => pal.PassiveSkills.Count)
             .ThenByDescending(pal => pal.Level)
             .FirstOrDefault();
@@ -499,7 +501,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         var carriers = FindSkillCarrierPlans(child, desiredPassives);
         if (carriers.Count == 0)
-            return $"No parent combinations for {child} are fully assigned to {ownerName}, and no owned Pals with the desired passive skills were found.";
+            return BuildNoSkillCarrierMessage(child, desiredPassives, ownerName);
 
         var covered = carriers.SelectMany(plan => plan.CoveredSkills).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var missing = desiredPassives.Except(covered, StringComparer.OrdinalIgnoreCase).ToList();
@@ -552,7 +554,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .Select(pal => new
             {
                 Pal = pal,
-                CoveredSkills = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList()
+                CoveredSkills = desiredPassives.Where(skill => HasPassiveSkill(pal, skill)).ToList()
             })
             .Where(candidate => candidate.CoveredSkills.Count > 0)
             .OrderByDescending(candidate => candidate.CoveredSkills.Count)
@@ -581,12 +583,12 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return path?.Count ?? int.MaxValue;
     }
 
-    private static string DescribeParentCandidate(string species, ParsedPal? pal, IReadOnlyList<string> desiredPassives)
+    private string DescribeParentCandidate(string species, ParsedPal? pal, IReadOnlyList<string> desiredPassives)
     {
         if (pal is null)
             return $"best {species}: no owned candidate in loaded save";
 
-        var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
+        var matched = desiredPassives.Where(skill => HasPassiveSkill(pal, skill)).ToList();
         var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
         var matchText = desiredPassives.Count == 0 ? "" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))}";
         var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
@@ -644,6 +646,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         if (extra.Count == 0) return;
         _passiveSkillOptions.AddRange(extra);
+        RebuildPassiveSkillAliases();
         PassiveSkillPicker.ItemsSource = null;
         PassiveSkillPicker.ItemsSource = _passiveSkillOptions
             .OrderByDescending(skill => skill.Rank)
@@ -745,5 +748,68 @@ The compact format may use "names" instead of "pals". Every result must contain 
         }
 
         return null;
+    }
+
+    private void RebuildPassiveSkillAliases()
+    {
+        _passiveSkillAliases.Clear();
+        foreach (var skill in _passiveSkillOptions)
+        {
+            AddPassiveSkillAlias(skill.Id, skill);
+            AddPassiveSkillAlias(skill.Name, skill);
+            AddPassiveSkillAlias(skill.DisplayName, skill);
+        }
+    }
+
+    private void AddPassiveSkillAlias(string value, PassiveSkillOption skill)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        _passiveSkillAliases[value.Trim()] = skill;
+        _passiveSkillAliases[NormalizePassiveSkill(value)] = skill;
+    }
+
+    private bool PassiveSkillsMatch(string desired, string actual)
+    {
+        if (string.IsNullOrWhiteSpace(desired) || string.IsNullOrWhiteSpace(actual)) return false;
+        if (desired.Equals(actual, StringComparison.OrdinalIgnoreCase)) return true;
+
+        var desiredKey = NormalizePassiveSkill(desired);
+        var actualKey = NormalizePassiveSkill(actual);
+        if (desiredKey.Equals(actualKey, StringComparison.OrdinalIgnoreCase)) return true;
+
+        var desiredOption = _passiveSkillAliases.GetValueOrDefault(desired.Trim()) ?? _passiveSkillAliases.GetValueOrDefault(desiredKey);
+        var actualOption = _passiveSkillAliases.GetValueOrDefault(actual.Trim()) ?? _passiveSkillAliases.GetValueOrDefault(actualKey);
+
+        return desiredOption is not null
+            && actualOption is not null
+            && desiredOption.Id.Equals(actualOption.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasPassiveSkill(ParsedPal pal, string desired)
+        => pal.PassiveSkills.Any(actual => PassiveSkillsMatch(desired, actual));
+
+    private static string NormalizePassiveSkill(string value)
+        => new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
+    private string BuildNoSkillCarrierMessage(string child, IReadOnlyList<string> desiredPassives, string ownerName)
+    {
+        var ownedPassives = _parsedSave!.Pals
+            .Where(IsRelevantOwner)
+            .SelectMany(pal => pal.PassiveSkills)
+            .Where(skill => !string.IsNullOrWhiteSpace(skill))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(skill => skill, StringComparer.CurrentCultureIgnoreCase)
+            .Take(20)
+            .ToList();
+
+        var output = new System.Text.StringBuilder();
+        output.AppendLine(CultureInfo.InvariantCulture, $"No parent combinations for {child} are fully assigned to {ownerName}.");
+        output.AppendLine(CultureInfo.InvariantCulture, $"No owned Pals assigned to {ownerName} matched: {string.Join(", ", desiredPassives)}");
+        output.AppendLine();
+        output.AppendLine(ownedPassives.Count == 0
+            ? "No passive skills were found on the currently filtered owned Pals."
+            : $"Detected owned passive skills include: {string.Join(", ", ownedPassives)}");
+        output.AppendLine("If the Pal is assigned to a different owner, select that player in Save Data or use Show all owners.");
+        return output.ToString();
     }
 }
