@@ -25,6 +25,7 @@ public sealed class ParsedPal
 {
     public string Owner { get; set; } = "";
     public string OwnerPlayerUid { get; set; } = "";
+    public List<string> OwnerPlayerUids { get; set; } = [];
     public string Species { get; set; } = "";
     public string CharacterId { get; set; } = "";
     public string Nickname { get; set; } = "";

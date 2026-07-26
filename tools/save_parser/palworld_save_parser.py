@@ -158,6 +158,57 @@ def guild_player_names(world: dict) -> dict[str, str]:
     return names
 
 
+def guild_members(world: dict) -> dict[str, dict[str, Any]]:
+    guilds: dict[str, dict[str, Any]] = {}
+    for group in map_entries(world, "GroupSaveDataMap"):
+        try:
+            group_type = unwrap(group["value"]["GroupType"])
+            if str(group_type) != "EPalGroupType::Guild":
+                continue
+            raw = group["value"]["RawData"]["value"]
+        except (KeyError, TypeError):
+            continue
+
+        group_id = normalize_id(raw.get("group_id") or group.get("key"))
+        if not group_id:
+            continue
+
+        member_uids = [
+            normalize_uid(member.get("player_uid"))
+            for member in raw.get("players", [])
+            if isinstance(member, dict) and normalize_uid(member.get("player_uid"))
+        ]
+        guilds[group_id] = {
+            "name": str(raw.get("guild_name") or raw.get("name") or "Guild"),
+            "memberUids": member_uids,
+        }
+    return guilds
+
+
+def base_container_owners(world: dict, guilds: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    containers: dict[str, dict[str, Any]] = {}
+    for base in map_entries(world, "BaseCampSaveData"):
+        value = base.get("value", {}) if isinstance(base, dict) else {}
+        raw = direct(value, "RawData", default={})
+        worker = direct(value, "WorkerDirector", default={})
+        worker_raw = direct(worker, "RawData", default={})
+        if not isinstance(raw, dict) or not isinstance(worker_raw, dict):
+            continue
+
+        container_id = normalize_id(worker_raw.get("container_id"))
+        if not container_id:
+            continue
+
+        guild = guilds.get(normalize_id(raw.get("group_id_belong_to")), {})
+        containers[container_id] = {
+            "ownerName": "Base: " + str(guild.get("name") or "Guild"),
+            "ownerUid": "",
+            "ownerUids": guild.get("memberUids", []),
+            "containerType": "Base",
+        }
+    return containers
+
+
 def parse_player_container_file(path: Path) -> tuple[str, dict[str, str]] | None:
     try:
         with path.open("rb") as file:
@@ -316,7 +367,10 @@ def main() -> None:
     wanted = {
         key: value
         for key, value in PALWORLD_CUSTOM_PROPERTIES.items()
-        if "CharacterSaveParameterMap" in key or "GroupSaveDataMap" in key or "CharacterContainerSaveData" in key
+        if "CharacterSaveParameterMap" in key
+        or "GroupSaveDataMap" in key
+        or "CharacterContainerSaveData" in key
+        or "BaseCampSaveData" in key
     }
     decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, wanted, allow_nan=False).dump()
     world = world_save_data(decoded)
@@ -325,6 +379,7 @@ def main() -> None:
 
     characters = [parse_character(entry) for entry in map_entries(world, "CharacterSaveParameterMap")]
     guild_names = guild_player_names(world)
+    guilds = guild_members(world)
     player_containers = player_container_ids(args.players_dir)
     player_dimension_pals = dimension_storage_pals(args.players_dir)
     slots_by_instance = container_slots(world)
@@ -345,15 +400,17 @@ def main() -> None:
         }
 
     players = list(player_by_uid.values())
-    container_to_owner: dict[str, dict[str, str]] = {}
+    container_to_owner: dict[str, dict[str, Any]] = {}
     for uid, containers in player_containers.items():
         owner_name = guild_names.get(uid) or player_by_uid.get(uid, {}).get("name") or uid
         for container_type, container_id in containers.items():
             container_to_owner[container_id] = {
                 "ownerName": owner_name,
                 "ownerUid": uid,
-                "containerType": "Dimensional Pal Storage" if container_type == "palbox" else "Party",
+                "ownerUids": [uid],
+                "containerType": "Pal Box" if container_type == "palbox" else "Party",
             }
+    container_to_owner.update(base_container_owners(world, guilds))
 
     pals = []
     for character in characters + [pal for storage_pals in player_dimension_pals.values() for pal in storage_pals]:
@@ -373,6 +430,7 @@ def main() -> None:
         pals.append({
             "owner": owner_name or character["ownerPlayerUid"] or "World / base",
             "ownerPlayerUid": character["ownerPlayerUid"] or owner_uid,
+            "ownerPlayerUids": container_owner.get("ownerUids", []) if container_owner else [owner_uid] if owner_uid else [],
             "species": species,
             "characterId": character["species"],
             "nickname": character["name"],

@@ -18,6 +18,39 @@ public static class ApplicationMaintenanceService
     private const string ReleaseAssetName = "PalworldHelper-win-x64.zip";
     private const string ManifestFileName = "palworldhelper.manifest.json";
 
+    public static string ObsoleteDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "PalworldHelper",
+        "obsolete");
+
+    public static (bool Exists, int DirectoryCount, int FileCount, long Bytes) GetObsoleteSummary()
+    {
+        if (!Directory.Exists(ObsoleteDirectory)) return (false, 0, 0, 0);
+        var files = Directory.EnumerateFiles(ObsoleteDirectory, "*", SearchOption.AllDirectories)
+            .Select(path => new FileInfo(path))
+            .ToList();
+        var directories = Directory.EnumerateDirectories(ObsoleteDirectory, "*", SearchOption.AllDirectories).Count();
+        return (true, directories, files.Count, files.Sum(file => file.Length));
+    }
+
+    public static void DeleteObsoleteDirectory()
+    {
+        if (Directory.Exists(ObsoleteDirectory))
+        {
+            Directory.Delete(ObsoleteDirectory, recursive: true);
+        }
+    }
+
+    public static void OpenObsoleteDirectory()
+    {
+        Directory.CreateDirectory(ObsoleteDirectory);
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = ObsoleteDirectory,
+            UseShellExecute = true
+        });
+    }
+
     public static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
         var current = GetCurrentVersion();
@@ -77,8 +110,7 @@ public static class ApplicationMaintenanceService
         var installDirectory = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         var executable = Environment.ProcessPath ?? Path.Combine(installDirectory, "PalworldHelper.exe");
         var archiveDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "PalworldHelper", "obsolete", DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
+            ObsoleteDirectory, DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
         var scriptPath = Path.Combine(root, "apply-update.ps1");
         var script = BuildUpdateScript(Environment.ProcessId, installDirectory, staging, archiveDirectory, executable, root);
         await File.WriteAllTextAsync(scriptPath, script, new UTF8Encoding(false), cancellationToken).ConfigureAwait(false);

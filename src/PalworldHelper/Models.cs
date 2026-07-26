@@ -71,7 +71,7 @@ public sealed record PassiveSkillOption(string Id, string Name, int Rank, string
         : $"{Name} ({Id}) · {Description}";
 }
 
-public sealed record SavePalRow(string Species, string Nickname, string Owner, string Storage, int Level, string Gender, string PassiveSkills);
+public sealed record SavePalRow(string Species, string Nickname, string Owner, string Storage, int Level, string Gender, string PassiveSkills, IReadOnlyList<string> OwnerPlayerUids);
 
 public sealed record SavePlayerRow(string Name, int Level, string PlayerUid);
 

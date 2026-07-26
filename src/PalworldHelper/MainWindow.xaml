@@ -110,10 +110,14 @@
                 </StackPanel>
               </Border>
               <DockPanel Margin="0,12,0,0">
-                <Button DockPanel.Dock="Right"
-                        Content="Select Level.sav"
-                        Margin="8,0,0,0"
-                        Click="PickLocalSave_Click"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Margin="8,0,0,0">
+                  <Button Content="Find automatically"
+                          Click="FindLocalSave_Click"/>
+                  <Button Content="Select Level.sav"
+                          Click="PickLocalSave_Click"/>
+                </StackPanel>
                 <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
               </DockPanel>
               <TextBlock x:Name="SaveStatus"
@@ -126,7 +130,7 @@
           <UniformGrid Grid.Row="1" Columns="4" Margin="0,14,0,14">
             <Border Style="{StaticResource StatCard}">
               <StackPanel>
-                <TextBlock Text="Players" Foreground="{StaticResource Muted}"/>
+                <TextBlock Text="Owners in view" Foreground="{StaticResource Muted}"/>
                 <TextBlock x:Name="SavePlayerCount" Text="—" FontSize="28" FontWeight="Bold"/>
               </StackPanel>
             </Border>
@@ -242,29 +246,7 @@
 
           <Border Style="{StaticResource Card}">
             <StackPanel>
-              <DockPanel>
-                <StackPanel>
-                  <TextBlock Text="Breeding Data" FontSize="20" FontWeight="SemiBold"/>
-                  <TextBlock Text="Default data is bundled. Select a custom JSON only when testing another dataset."
-                             Foreground="{StaticResource Muted}"
-                             TextWrapping="Wrap"
-                             Margin="0,5,0,0"/>
-                </StackPanel>
-                <Button DockPanel.Dock="Right"
-                        Content="JSON format info"
-                        Click="ShowBreedingJsonInfo_Click"
-                        Padding="12,5"/>
-              </DockPanel>
-
-              <DockPanel Margin="0,12,0,0">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                  <Button Content="Use Default" Click="UseBundledBreedingData_Click"/>
-                  <Button Content="Select JSON" Margin="8,8,0,0" Click="PickBreedingJson_Click"/>
-                </StackPanel>
-                <TextBox x:Name="BreedingJsonPath" IsReadOnly="True"/>
-              </DockPanel>
-
-              <DockPanel Margin="0,10,0,0">
+              <DockPanel Margin="0,0,0,0">
                 <Border x:Name="BreedingDataKindBadge"
                         DockPanel.Dock="Left"
                         Background="#2563EB"
@@ -281,6 +263,28 @@
                            TextWrapping="Wrap"
                            VerticalAlignment="Center"/>
               </DockPanel>
+
+              <Expander Header="Advanced: breeding data source"
+                        Margin="0,10,0,0"
+                        IsExpanded="False">
+                <StackPanel>
+                  <TextBlock Text="The bundled default is normally correct. Use a custom JSON only when the game changes breeding rules or you are testing another dataset."
+                             Foreground="{StaticResource Muted}"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,0"/>
+                  <DockPanel Margin="0,12,0,0">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                      <Button Content="JSON format info"
+                              Click="ShowBreedingJsonInfo_Click"/>
+                      <Button Content="Use Default"
+                              Click="UseBundledBreedingData_Click"/>
+                      <Button Content="Select JSON"
+                              Click="PickBreedingJson_Click"/>
+                    </StackPanel>
+                    <TextBox x:Name="BreedingJsonPath" IsReadOnly="True"/>
+                  </DockPanel>
+                </StackPanel>
+              </Expander>
             </StackPanel>
           </Border>
 
@@ -289,11 +293,13 @@
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
               </Grid.RowDefinitions>
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="1.5*"/>
+                <ColumnDefinition Width="190"/>
                 <ColumnDefinition Width="Auto"/>
               </Grid.ColumnDefinitions>
 
@@ -336,14 +342,28 @@
                            Margin="0,5,0,0"/>
               </StackPanel>
 
-              <Button Grid.Column="3"
+              <StackPanel Grid.Column="3" Margin="14,0,0,0">
+                <Label Content="Gender conversions"/>
+                <ComboBox x:Name="GenderConversionBudget"
+                          SelectedIndex="0">
+                  <ComboBoxItem Content="0"/>
+                  <ComboBoxItem Content="1"/>
+                  <ComboBoxItem Content="2"/>
+                </ComboBox>
+                <TextBlock Text="Uses gender-change items when needed."
+                           Foreground="{StaticResource Muted}"
+                           FontSize="12"
+                           Margin="0,5,0,0"/>
+              </StackPanel>
+
+              <Button Grid.Column="4"
                       Content="Find best chain"
                       VerticalAlignment="Top"
                       Margin="14,25,0,0"
                       Click="FindPath_Click"/>
 
               <Expander Grid.Row="1"
-                        Grid.ColumnSpan="4"
+                        Grid.ColumnSpan="5"
                         Header="Saved breeding goals"
                         IsExpanded="True"
                         Margin="0,16,0,0">
@@ -366,6 +386,15 @@
                             Click="RemoveBreedingGoal_Click"/>
                   </StackPanel>
                 </Grid>
+              </Expander>
+              <Expander Grid.Row="2"
+                        Grid.ColumnSpan="5"
+                        Header="Passive inheritance notes"
+                        Margin="0,12,0,0">
+                <TextBlock Margin="0,8,0,0"
+                           Foreground="{StaticResource Muted}"
+                           TextWrapping="Wrap"
+                           Text="Palworld combines both parents' passive skills, removes duplicates, then rolls how many parent passives the child inherits: 1 = 40%, 2 = 30%, 3 = 20%, 4 = 10%. A second roll can add random passives if empty slots remain. PalworldHelper ranks owned parent pairs by the estimated chance to hatch the exact desired passive set without extra random passives. Clean parents are better: together they should carry the desired passives and as few unwanted passives as possible. Duplicate passives on both parents do not improve the odds.&#x0a;&#x0a;Sources: Palworld Wiki.gg – Breeding, section “Passing Down Passive Skills” (https://palworld.wiki.gg/wiki/Breeding); Palworld Wiki.gg – Passive Skills, section “Acquisition / Breeding” (https://palworld.wiki.gg/wiki/Passive_Skills)."/>
               </Expander>
             </Grid>
           </Border>
@@ -391,8 +420,8 @@
                        IsReadOnly="True"
                        TextWrapping="Wrap"
                        VerticalScrollBarVisibility="Auto"
-                       Padding="10"
-                       FontFamily="Consolas"
+                       Padding="14"
+                       FontSize="14"
                        Text="Click a breeding result to inspect owned parent candidates."/>
             </GroupBox>
           </Grid>
@@ -556,6 +585,33 @@
                         Background="#FF8796"
                         Click="Uninstall_Click"/>
               </WrapPanel>
+              <Border Background="{StaticResource Panel2}"
+                      CornerRadius="8"
+                      Padding="12"
+                      Margin="0,16,0,0">
+                <StackPanel>
+                  <TextBlock Text="Obsolete update archive"
+                             FontSize="16"
+                             FontWeight="SemiBold"/>
+                  <TextBlock Text="Old files moved during updates are kept here temporarily so you can inspect or remove them later."
+                             TextWrapping="Wrap"
+                             Foreground="{StaticResource Muted}"
+                             Margin="0,6,0,10"/>
+                  <TextBlock x:Name="ObsoleteStatus"
+                             TextWrapping="Wrap"
+                             Foreground="{StaticResource Muted}"
+                             Margin="0,0,0,8"/>
+                  <WrapPanel>
+                    <Button Content="Open obsolete folder"
+                            Click="OpenObsoleteFolder_Click"/>
+                    <Button Content="Refresh"
+                            Click="RefreshObsolete_Click"/>
+                    <Button Content="Delete obsolete folder"
+                            Background="#FF8796"
+                            Click="DeleteObsolete_Click"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
               <TextBlock x:Name="MaintenanceStatus"
                          Margin="0,14,0,0"
                          TextWrapping="Wrap"
