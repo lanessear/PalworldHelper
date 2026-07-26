@@ -110,10 +110,14 @@
                 </StackPanel>
               </Border>
               <DockPanel Margin="0,12,0,0">
-                <Button DockPanel.Dock="Right"
-                        Content="Select Level.sav"
-                        Margin="8,0,0,0"
-                        Click="PickLocalSave_Click"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Margin="8,0,0,0">
+                  <Button Content="Find automatically"
+                          Click="FindLocalSave_Click"/>
+                  <Button Content="Select Level.sav"
+                          Click="PickLocalSave_Click"/>
+                </StackPanel>
                 <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
               </DockPanel>
               <TextBlock x:Name="SaveStatus"

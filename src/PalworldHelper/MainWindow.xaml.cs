@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     private ServerProfile? _current;
     private ParsedSave? _parsedSave;
 
+    private sealed record LocalSaveCandidate(string SavePath, bool HasPlayersFolder, DateTime LastWriteTimeUtc);
+
     public MainWindow()
     {
         InitializeComponent();
@@ -214,6 +216,77 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true)
             await InspectSaveAsync(dialog.FileName, persistPath: true);
     }
+
+    private async void FindLocalSave_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            SaveStatus.Text = "Searching local Palworld save folders …";
+            var candidates = FindLocalSaveCandidates();
+            if (candidates.Count == 0)
+            {
+                var root = LocalPalworldSaveRoot();
+                SaveStatus.Text = Directory.Exists(root)
+                    ? $"No Level.sav files were found under {root}."
+                    : $"Local Palworld save folder was not found: {root}";
+                return;
+            }
+
+            var selected = candidates
+                .OrderByDescending(candidate => candidate.HasPlayersFolder)
+                .ThenByDescending(candidate => candidate.LastWriteTimeUtc)
+                .First();
+            var note = candidates.Count == 1
+                ? "Found one local save."
+                : string.Create(
+                    CultureInfo.CurrentCulture,
+                    $"Found {candidates.Count:N0} local saves. Using the newest save with player data when available.");
+            SaveStatus.Text = note;
+            await InspectSaveAsync(selected.SavePath, persistPath: true);
+        }
+        catch (Exception ex)
+        {
+            SaveStatus.Text = "✗ Local save search failed: " + ex.Message;
+        }
+    }
+
+    private static List<LocalSaveCandidate> FindLocalSaveCandidates()
+    {
+        var root = LocalPalworldSaveRoot();
+        if (!Directory.Exists(root)) return [];
+
+        var candidates = new List<LocalSaveCandidate>();
+        var options = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true
+        };
+        foreach (var path in Directory.EnumerateFiles(root, "Level.sav", options))
+        {
+            try
+            {
+                var directory = Path.GetDirectoryName(path);
+                var hasPlayers = !string.IsNullOrWhiteSpace(directory)
+                    && Directory.Exists(Path.Combine(directory, "Players"));
+                candidates.Add(new LocalSaveCandidate(path, hasPlayers, File.GetLastWriteTimeUtc(path)));
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return candidates;
+    }
+
+    private static string LocalPalworldSaveRoot()
+        => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Pal",
+            "Saved",
+            "SaveGames");
 
     private async Task InspectSaveAsync(string path, bool persistPath)
     {
