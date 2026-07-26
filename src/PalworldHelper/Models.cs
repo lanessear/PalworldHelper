@@ -51,3 +51,5 @@ public sealed record PassiveSkillOption(string Id, string Name, int Rank, string
 public sealed record SavePalRow(string Species, string Nickname, string Owner, int Level, string Gender, string PassiveSkills);
 
 public sealed record SavePlayerRow(string Name, int Level, string PlayerUid);
+
+public sealed record SkillCarrierPlan(ParsedPal Carrier, IReadOnlyList<string> CoveredSkills, IReadOnlyList<BreedingPlanStep>? Path);

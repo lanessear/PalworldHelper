@@ -462,7 +462,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         if (ownerChoices.Count == 0)
         {
-            ParentDetails.Text = $"No parent combinations for {child} are fully assigned to {CurrentOwnerName() ?? "the selected owner"}.";
+            ParentDetails.Text = BuildSkillCarrierFallback(child, desiredPassives);
             return;
         }
 
@@ -491,6 +491,96 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .FirstOrDefault();
     }
 
+    private string BuildSkillCarrierFallback(string child, IReadOnlyList<string> desiredPassives)
+    {
+        var ownerName = CurrentOwnerName() ?? "the selected owner";
+        if (!HasParsedSave || desiredPassives.Count == 0)
+            return $"No parent combinations for {child} are fully assigned to {ownerName}.";
+
+        var carriers = FindSkillCarrierPlans(child, desiredPassives);
+        if (carriers.Count == 0)
+            return $"No parent combinations for {child} are fully assigned to {ownerName}, and no owned Pals with the desired passive skills were found.";
+
+        var covered = carriers.SelectMany(plan => plan.CoveredSkills).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var missing = desiredPassives.Except(covered, StringComparer.OrdinalIgnoreCase).ToList();
+        var output = new System.Text.StringBuilder();
+        output.AppendLine(CultureInfo.InvariantCulture, $"No parent combinations for {child} are fully assigned to {ownerName}.");
+        output.AppendLine();
+        output.AppendLine("Fallback: use owned passive carriers as the gene pool.");
+        output.AppendLine("A child can inherit none, one, or two passives from its parents. Exact odds are not calculated here.");
+        output.AppendLine("Mutations can also add unexpected passives — try your luck if the perfect route is not available.");
+        output.AppendLine();
+
+        foreach (var plan in carriers)
+        {
+            output.AppendLine(CultureInfo.InvariantCulture, $"{plan.Carrier.Species} ({DisplayNickname(plan.Carrier)}) covers {string.Join(", ", plan.CoveredSkills)}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"  Owner: {plan.Carrier.Owner} · Level {plan.Carrier.Level} · {plan.Carrier.Gender}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"  Passives: {(plan.Carrier.PassiveSkills.Count == 0 ? "none" : string.Join(", ", plan.Carrier.PassiveSkills))}");
+            if (plan.Path is null)
+            {
+                output.AppendLine(CultureInfo.InvariantCulture, $"  No breeding route from {plan.Carrier.Species} to {child} was found with the current owner pool.");
+            }
+            else if (plan.Path.Count == 0)
+            {
+                output.AppendLine(CultureInfo.InvariantCulture, $"  Carrier already is {child}.");
+            }
+            else
+            {
+                output.AppendLine(CultureInfo.InvariantCulture, $"  Suggested route to {child}:");
+                for (var i = 0; i < plan.Path.Count; i++)
+                    output.AppendLine(CultureInfo.InvariantCulture, $"    {i + 1}. {plan.Path[i].Parent} + {plan.Path[i].Mate} → {plan.Path[i].Child}");
+            }
+            output.AppendLine();
+        }
+
+        if (missing.Count > 0)
+        {
+            output.AppendLine(CultureInfo.InvariantCulture, $"Still missing in owned Pals: {string.Join(", ", missing)}");
+            output.AppendLine("Try your luck via mutation or add/capture a Pal carrying the missing passive.");
+        }
+
+        return output.ToString();
+    }
+
+    private List<SkillCarrierPlan> FindSkillCarrierPlans(string child, IReadOnlyList<string> desiredPassives)
+    {
+        var selected = new List<SkillCarrierPlan>();
+        var covered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var available = GetAvailableSpeciesOrNull();
+        var candidates = _parsedSave!.Pals
+            .Where(IsRelevantOwner)
+            .Select(pal => new
+            {
+                Pal = pal,
+                CoveredSkills = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList()
+            })
+            .Where(candidate => candidate.CoveredSkills.Count > 0)
+            .OrderByDescending(candidate => candidate.CoveredSkills.Count)
+            .ThenBy(candidate => candidate.Pal.Species.Equals(child, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(candidate => RouteLength(candidate.Pal.Species, child, available))
+            .ThenByDescending(candidate => candidate.Pal.Level)
+            .ToList();
+
+        foreach (var candidate in candidates)
+        {
+            var newSkills = candidate.CoveredSkills.Where(skill => !covered.Contains(skill)).ToList();
+            if (newSkills.Count == 0) continue;
+
+            var path = _breeding.FindShortestFromStart(candidate.Pal.Species, child, available);
+            selected.Add(new SkillCarrierPlan(candidate.Pal, newSkills, path));
+            foreach (var skill in newSkills) covered.Add(skill);
+            if (desiredPassives.All(covered.Contains)) break;
+        }
+
+        return selected;
+    }
+
+    private int RouteLength(string start, string target, IReadOnlySet<string>? available)
+    {
+        var path = _breeding.FindShortestFromStart(start, target, available);
+        return path?.Count ?? int.MaxValue;
+    }
+
     private static string DescribeParentCandidate(string species, ParsedPal? pal, IReadOnlyList<string> desiredPassives)
     {
         if (pal is null)
@@ -502,6 +592,9 @@ The compact format may use "names" instead of "pals". Every result must contain 
         var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
         return $"best {species}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
     }
+
+    private static string DisplayNickname(ParsedPal pal)
+        => string.IsNullOrWhiteSpace(pal.Nickname) ? pal.Species : pal.Nickname;
 
     private void UpdateBreedingAvailabilityStatus()
     {
