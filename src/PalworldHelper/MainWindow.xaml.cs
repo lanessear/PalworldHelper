@@ -218,6 +218,17 @@ public partial class MainWindow : Window
             await InspectSaveAsync(dialog.FileName, persistPath: true);
     }
 
+    private async void RefreshSaveData_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(LocalSavePath.Text) || !File.Exists(LocalSavePath.Text))
+        {
+            SaveStatus.Text = "Select a Level.sav before refreshing save data.";
+            return;
+        }
+
+        await InspectSaveAsync(LocalSavePath.Text, persistPath: false, forceRefresh: true);
+    }
+
     private async void FindLocalSave_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -289,12 +300,14 @@ public partial class MainWindow : Window
             "Saved",
             "SaveGames");
 
-    private async Task InspectSaveAsync(string path, bool persistPath)
+    private async Task InspectSaveAsync(string path, bool persistPath, bool forceRefresh = false)
     {
         try
         {
             LocalSavePath.Text = path;
-            SaveStatus.Text = "Reading and parsing save file …";
+            SaveStatus.Text = forceRefresh
+                ? "Refreshing save cache and parsing save file …"
+                : "Reading save data …";
             SaveMetadata.Text = string.Empty;
             SaveHexPreview.Text = string.Empty;
             SavePlayersList.ItemsSource = null;
@@ -315,13 +328,15 @@ public partial class MainWindow : Window
                 _settingsService.Save(_settings);
             }
 
-            var result = await SaveInspectionService.InspectAsync(path);
+            var result = await SaveInspectionService.InspectAsync(path, forceRefresh);
             _parsedSave = result.ParsedSave;
             SaveMetadata.Text = result.Metadata;
             SaveHexPreview.Text = result.HexPreview;
             PopulateSaveOverview(_parsedSave);
             AddUnknownPassiveSkillsFromSave(_parsedSave);
-            SaveStatus.Text = "✓ Save file loaded and parsed. This path will be restored on the next start.";
+            SaveStatus.Text = result.CacheHit
+                ? "✓ Save file loaded from cache. This path will be restored on the next start."
+                : "✓ Save file parsed and cached. This path will be restored on the next start.";
             UpdateBreedingAvailabilityStatus();
         }
         catch (Exception ex)

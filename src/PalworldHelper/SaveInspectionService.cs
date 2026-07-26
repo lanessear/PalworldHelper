@@ -5,13 +5,13 @@ using System.Text;
 
 namespace PalworldHelper;
 
-public sealed record SaveInspectionResult(string Metadata, string HexPreview, string ReadableStrings, ParsedSave ParsedSave);
+public sealed record SaveInspectionResult(string Metadata, string HexPreview, string ReadableStrings, ParsedSave ParsedSave, bool CacheHit);
 
 public static class SaveInspectionService
 {
     private const int PreviewBytes = 512;
 
-    public static async Task<SaveInspectionResult> InspectAsync(string path)
+    public static async Task<SaveInspectionResult> InspectAsync(string path, bool forceRefresh = false)
     {
         if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("A save file path is required.", nameof(path));
         if (!File.Exists(path)) throw new FileNotFoundException("The selected save file does not exist.", path);
@@ -23,7 +23,8 @@ public static class SaveInspectionService
         stream.Position = 0;
         var hash = await SHA256.HashDataAsync(stream).ConfigureAwait(false);
 
-        var parsed = await SaveParserService.ParseAsync(path).ConfigureAwait(false);
+        var parsedResult = await SaveCacheService.LoadOrParseAsync(path, forceRefresh).ConfigureAwait(false);
+        var parsed = parsedResult.Save;
         var metadata = new StringBuilder()
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Name: {info.Name}"))
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Full path: {info.FullName}"))
@@ -31,11 +32,12 @@ public static class SaveInspectionService
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Last modified: {info.LastWriteTime:yyyy-MM-dd HH:mm:ss}"))
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"SHA-256: {Convert.ToHexString(hash).ToLowerInvariant()}"))
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Parser: {parsed.Parser}"))
+            .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Cache: {SaveCacheService.CacheStatus(parsedResult.CacheHit)}"))
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Players: {parsed.PlayerCount:N0}"))
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"Pals: {parsed.PalCount:N0}"))
             .ToString();
 
-        return new SaveInspectionResult(metadata, BuildHexPreview(preview.AsSpan(0, totalRead)), FormatParsedData(parsed), parsed);
+        return new SaveInspectionResult(metadata, BuildHexPreview(preview.AsSpan(0, totalRead)), FormatParsedData(parsed), parsed, parsedResult.CacheHit);
     }
 
     private static string FormatParsedData(ParsedSave save)
