@@ -15,6 +15,9 @@
     <SolidColorBrush x:Key="SuccessSoft" Color="#DCFCE7"/>
     <SolidColorBrush x:Key="WarningSoft" Color="#FEF3C7"/>
     <SolidColorBrush x:Key="Border" Color="#CBD5E1"/>
+    <SolidColorBrush x:Key="Sidebar" Color="#0F172A"/>
+    <SolidColorBrush x:Key="SidebarMuted" Color="#94A3B8"/>
+    <SolidColorBrush x:Key="SidebarPanel" Color="#1E293B"/>
 
     <Style TargetType="Window">
       <Setter Property="Background" Value="{StaticResource Bg}"/>
@@ -40,6 +43,13 @@
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background" Value="#FF8796"/>
       <Setter Property="Foreground" Value="{StaticResource Text}"/>
+    </Style>
+    <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="{StaticResource SidebarPanel}"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Padding" Value="14,11"/>
+      <Setter Property="Margin" Value="0,7,0,0"/>
     </Style>
     <Style TargetType="TabItem"><Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="Padding" Value="16,8"/></Style>
     <Style TargetType="GroupBox">
