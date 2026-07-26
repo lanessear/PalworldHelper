@@ -234,6 +234,8 @@ public partial class MainWindow : Window
 
     private void GoToBreeding_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 1;
 
+    private void GoToServerImport_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 2;
+
     private void GoToMaintenance_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedIndex = 3;
 
     private async void FindLocalSave_Click(object sender, RoutedEventArgs e)
