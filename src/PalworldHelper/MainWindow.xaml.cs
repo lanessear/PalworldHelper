@@ -479,7 +479,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         ParentDetails.Text = output.ToString();
     }
 
-    private ParsedPal? GetBestOwnedPal(string species, IReadOnlyList<string> desiredPassives)
+    private ParsedPal? GetBestOwnedPal(string species, List<string> desiredPassives)
     {
         if (!HasParsedSave) return null;
         return _parsedSave!.Pals
@@ -491,7 +491,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             .FirstOrDefault();
     }
 
-    private string BuildSkillCarrierFallback(string child, IReadOnlyList<string> desiredPassives)
+    private string BuildSkillCarrierFallback(string child, List<string> desiredPassives)
     {
         var ownerName = CurrentOwnerName() ?? "the selected owner";
         if (!HasParsedSave || desiredPassives.Count == 0)
@@ -542,7 +542,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return output.ToString();
     }
 
-    private List<SkillCarrierPlan> FindSkillCarrierPlans(string child, IReadOnlyList<string> desiredPassives)
+    private List<SkillCarrierPlan> FindSkillCarrierPlans(string child, List<string> desiredPassives)
     {
         var selected = new List<SkillCarrierPlan>();
         var covered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -581,7 +581,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return path?.Count ?? int.MaxValue;
     }
 
-    private static string DescribeParentCandidate(string species, ParsedPal? pal, IReadOnlyList<string> desiredPassives)
+    private static string DescribeParentCandidate(string species, ParsedPal? pal, List<string> desiredPassives)
     {
         if (pal is null)
             return $"best {species}: no owned candidate in loaded save";

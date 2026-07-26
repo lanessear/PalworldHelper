@@ -108,7 +108,7 @@ jobs:
       - name: Verify package
         shell: pwsh
         run: |
-          foreach ($required in @('PalworldHelper.exe','parser/PalworldSaveParser.exe','palworld_breeding_results_v1.0_2026-07-24.json','THIRD-PARTY-NOTICES.md','palworldhelper.manifest.json')) {
+          foreach ($required in @('PalworldHelper.exe','parser/PalworldSaveParser.exe','palworld_breeding_results_v1.0_2026-07-24.json','palworld_passive_skills.json','THIRD-PARTY-NOTICES.md','palworldhelper.manifest.json')) {
             if (-not (Test-Path (Join-Path publish $required))) { throw "Missing required package file: $required" }
           }
 

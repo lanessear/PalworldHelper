@@ -5,8 +5,9 @@ PalworldHelper uses a pragmatic clean architecture.
 ```mermaid
 flowchart LR
   UI[PalworldHelper\nWPF desktop app] --> Core[PalworldHelper.Core\nDomain + use-case contracts]
-  UI --> Import[WPF SFTP + save inspection]
+  UI --> Import[WPF SFTP + save parsing]
   UI --> DataFile[Default breeding JSON]
+  UI --> Parser[Bundled parser helper]
   Plugins[External plugins] --> PluginApi[Plugins.Abstractions]
 ```
 
@@ -15,7 +16,8 @@ flowchart LR
 - `Core` depends on no infrastructure project.
 - `Data` implements persistence contracts defined by `Core`.
 - `SaveImport` implements acquisition and conversion contracts defined by `Core`.
-- `PalworldHelper` is the current WPF application and packaging target.
+- `PalworldHelper` is the WPF application and packaging target.
+- The parser helper is a temporary external process until native C# save parsing replaces it.
 - Plugin contracts remain deliberately small and stable.
 
 ## Local-first application model

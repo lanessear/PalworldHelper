@@ -46,6 +46,10 @@ The save parser is currently shipped as a bundled helper in the `parser` folder 
 
 Third-party parser sources and license notes are tracked in `THIRD-PARTY-NOTICES.md`.
 
+## Project tracking
+
+Roadmap-sized work is tracked as GitHub issues. Keep `ROADMAP.md` as the readable overview and link implementation work to issues or pull requests when it becomes active.
+
 ## Install
 
 Download the latest Windows ZIP from **Actions → Build Windows package** or from a tagged GitHub release, extract it, and start `PalworldHelper.exe`.
@@ -65,3 +69,7 @@ Run the Windows package build:
 ```
 
 The output is written to `publish\`.
+
+## License
+
+PalworldHelper source code is licensed under the MIT License. Bundled third-party parser components have separate notices and obligations in `THIRD-PARTY-NOTICES.md`.
