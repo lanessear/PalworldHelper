@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private ParsedSave? _parsedSave;
 
     private sealed record LocalSaveCandidate(string SavePath, bool HasPlayersFolder, DateTime LastWriteTimeUtc);
+    private sealed record ParentPairCandidate(ParsedPal Parent1, ParsedPal Parent2, int GenderConversions);
 
     public MainWindow()
     {
@@ -435,9 +436,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         }
         if (path.Count == 0)
         {
-            ResultList.Items.Add(new BreedingResultItem(HasParsedSave
-                ? "You already have this Pal in the loaded save."
-                : "This Pal is available directly because no save restriction is active.", target));
+            AddOwnedTargetResult(target);
             ShowParentChoices(target);
             return;
         }
@@ -450,6 +449,59 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 path[i].Child));
         }
         ShowParentChoices(path[^1].Child);
+    }
+
+    private void AddOwnedTargetResult(string target)
+    {
+        var desiredPassives = DesiredPassives();
+        if (!HasParsedSave)
+        {
+            ResultList.Items.Add(new BreedingResultItem("This Pal is available directly because no save restriction is active.", target));
+            return;
+        }
+
+        var ownedTargets = _parsedSave!.Pals
+            .Where(IsRelevantOwner)
+            .Where(pal => pal.Species.Equals(target, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(pal => PassiveMatchCount(pal, desiredPassives))
+            .ThenBy(pal => UnwantedPassiveCount(pal, desiredPassives))
+            .ThenBy(pal => pal.PassiveSkills.Count)
+            .ThenByDescending(pal => pal.Level)
+            .ToList();
+
+        if (desiredPassives.Count == 0)
+        {
+            ResultList.Items.Add(new BreedingResultItem("You already have this Pal in the loaded save.", target));
+            return;
+        }
+
+        var perfect = ownedTargets.FirstOrDefault(pal => desiredPassives.All(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)));
+        if (perfect is not null)
+        {
+            ResultList.Items.Add(new BreedingResultItem(
+                $"You already have {PalDisplayName(target)} with all desired passive skills: {FormatOwnedTargetCandidate(perfect, desiredPassives)}",
+                target));
+            return;
+        }
+
+        ResultList.Items.Add(new BreedingResultItem(
+            $"You own {PalDisplayName(target)}, but none match all desired passive skills. Best owned candidates:",
+            target));
+        foreach (var pal in ownedTargets.Take(5))
+        {
+            ResultList.Items.Add(new BreedingResultItem("  " + FormatOwnedTargetCandidate(pal, desiredPassives), target));
+        }
+        ResultList.Items.Add(new BreedingResultItem("Parent options on the right can still help breed the missing passives.", target));
+    }
+
+    private static string FormatOwnedTargetCandidate(ParsedPal pal, List<string> desiredPassives)
+    {
+        var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
+        var missing = desiredPassives.Except(matched, StringComparer.OrdinalIgnoreCase).ToList();
+        var passives = pal.PassiveSkills.Count == 0 ? "no passives" : string.Join(", ", pal.PassiveSkills);
+        return string.Create(
+            CultureInfo.CurrentCulture,
+            $"{DisplayNickname(pal)} · {pal.Storage} · Level {pal.Level} · matches {matched.Count}/{desiredPassives.Count} · missing {(missing.Count == 0 ? "none" : string.Join(", ", missing))} · {passives}");
     }
 
     private bool HasParsedSave => _parsedSave is { Pals.Count: > 0 };
@@ -636,6 +688,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private void ShowParentChoices(string child)
     {
         var desiredPassives = DesiredPassives();
+        var genderBudget = SelectedGenderConversionBudget();
         var choices = _breeding.GetParentChoices(child);
         if (choices.Count == 0)
         {
@@ -644,9 +697,14 @@ The compact format may use "names" instead of "pals". Every result must contain 
         }
 
         var output = new System.Text.StringBuilder();
-        output.AppendLine(CultureInfo.InvariantCulture, $"Target child: {PalDisplayName(child)}");
-        output.AppendLine(HasParsedSave ? $"Loaded save is active: only Pals assigned to {CurrentOwnerName() ?? "the selected owner"} are ranked as available." : "No save is active: all species are treated as available.");
-        output.AppendLine(desiredPassives.Count == 0 ? "Desired passives: none selected" : $"Desired passives: {string.Join(", ", desiredPassives)}");
+        output.AppendLine(CultureInfo.InvariantCulture, $"Target: {PalDisplayName(child)}");
+        output.AppendLine(HasParsedSave
+            ? $"Save filter: {CurrentOwnerName() ?? "all owners"}"
+            : "Save filter: none, all species are treated as available");
+        output.AppendLine(desiredPassives.Count == 0
+            ? "Desired passives: none selected"
+            : $"Desired passives: {string.Join(", ", desiredPassives)}");
+        output.AppendLine(CultureInfo.InvariantCulture, $"Gender conversions allowed: {genderBudget}");
         output.AppendLine();
 
         var ownerChoices = HasParsedSave
@@ -654,13 +712,13 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 .Select(choice => new
                 {
                     Choice = choice,
-                    Parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives),
-                    Parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives)
+                    Pair = GetBestOwnedParentPair(choice.Parent1, choice.Parent2, desiredPassives, genderBudget)
                 })
-                .Where(choice => choice.Parent1 is not null && choice.Parent2 is not null)
-                .OrderByDescending(choice => PassiveMatchCount(choice.Parent1!, desiredPassives) + PassiveMatchCount(choice.Parent2!, desiredPassives))
-                .ThenBy(choice => UnwantedPassiveCount(choice.Parent1!, desiredPassives) + UnwantedPassiveCount(choice.Parent2!, desiredPassives))
-                .ThenByDescending(choice => choice.Parent1!.Level + choice.Parent2!.Level)
+                .Where(choice => choice.Pair is not null)
+                .OrderBy(choice => choice.Pair!.GenderConversions)
+                .ThenByDescending(choice => PassiveMatchCount(choice.Pair!.Parent1, desiredPassives) + PassiveMatchCount(choice.Pair!.Parent2, desiredPassives))
+                .ThenBy(choice => UnwantedPassiveCount(choice.Pair!.Parent1, desiredPassives) + UnwantedPassiveCount(choice.Pair!.Parent2, desiredPassives))
+                .ThenByDescending(choice => choice.Pair!.Parent1.Level + choice.Pair!.Parent2.Level)
                 .Select(choice => choice.Choice)
                 .ToList()
             : choices.ToList();
@@ -671,18 +729,77 @@ The compact format may use "names" instead of "pals". Every result must contain 
             return;
         }
 
-        foreach (var choice in ownerChoices.Take(20))
+        var option = 1;
+        foreach (var choice in ownerChoices.Take(10))
         {
-            var parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives);
-            var parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives);
-            output.AppendLine(CultureInfo.InvariantCulture, $"{PalDisplayName(choice.Parent1)} + {PalDisplayName(choice.Parent2)}");
-            output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent1, parent1, desiredPassives)}");
-            output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent2, parent2, desiredPassives)}");
+            var pair = GetBestOwnedParentPair(choice.Parent1, choice.Parent2, desiredPassives, genderBudget);
+            var parent1 = pair?.Parent1;
+            var parent2 = pair?.Parent2;
+            output.AppendLine(CultureInfo.InvariantCulture, $"Option {option}: {PalDisplayName(choice.Parent1)} + {PalDisplayName(choice.Parent2)}");
+            if (pair is not null)
+            {
+                output.AppendLine(CultureInfo.InvariantCulture, $"Gender changes needed: {pair.GenderConversions}/{genderBudget}");
+            }
+            output.AppendLine(DescribeParentCandidate(choice.Parent1, parent1, desiredPassives));
+            output.AppendLine(DescribeParentCandidate(choice.Parent2, parent2, desiredPassives));
             output.AppendLine();
+            option++;
         }
 
         ParentDetails.Text = output.ToString();
     }
+
+    private int SelectedGenderConversionBudget()
+    {
+        if (GenderConversionBudget?.SelectedItem is ComboBoxItem item
+            && int.TryParse(item.Content?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+        {
+            return Math.Clamp(value, 0, 2);
+        }
+
+        return 0;
+    }
+
+    private ParentPairCandidate? GetBestOwnedParentPair(string parent1Species, string parent2Species, List<string> desiredPassives, int genderBudget)
+    {
+        if (!HasParsedSave) return null;
+        var firstCandidates = OwnedCandidates(parent1Species).ToList();
+        var secondCandidates = OwnedCandidates(parent2Species).ToList();
+        return firstCandidates
+            .SelectMany(first => secondCandidates.Select(second => new
+            {
+                First = first,
+                Second = second,
+                Conversions = RequiredGenderConversions(first, second)
+            }))
+            .Where(pair => pair.Conversions <= genderBudget)
+            .OrderBy(pair => pair.Conversions)
+            .ThenByDescending(pair => PassiveMatchCount(pair.First, desiredPassives) + PassiveMatchCount(pair.Second, desiredPassives))
+            .ThenBy(pair => UnwantedPassiveCount(pair.First, desiredPassives) + UnwantedPassiveCount(pair.Second, desiredPassives))
+            .ThenBy(pair => pair.First.PassiveSkills.Count + pair.Second.PassiveSkills.Count)
+            .ThenByDescending(pair => pair.First.Level + pair.Second.Level)
+            .Select(pair => new ParentPairCandidate(pair.First, pair.Second, pair.Conversions))
+            .FirstOrDefault();
+    }
+
+    private IEnumerable<ParsedPal> OwnedCandidates(string species)
+        => _parsedSave!.Pals
+            .Where(IsRelevantOwner)
+            .Where(pal => pal.Species.Equals(species, StringComparison.OrdinalIgnoreCase));
+
+    private static int RequiredGenderConversions(ParsedPal first, ParsedPal second)
+    {
+        var firstGender = CleanGender(first.Gender);
+        var secondGender = CleanGender(second.Gender);
+        var firstKnown = IsKnownBreedingGender(firstGender);
+        var secondKnown = IsKnownBreedingGender(secondGender);
+        if (!firstKnown || !secondKnown) return int.MaxValue;
+        return firstGender.Equals(secondGender, StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+    }
+
+    private static bool IsKnownBreedingGender(string gender)
+        => gender.Equals("Male", StringComparison.OrdinalIgnoreCase)
+            || gender.Equals("Female", StringComparison.OrdinalIgnoreCase);
 
     private ParsedPal? GetBestOwnedPal(string species, List<string> desiredPassives)
     {
@@ -791,15 +908,22 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private string DescribeParentCandidate(string species, ParsedPal? pal, List<string> desiredPassives)
     {
         if (pal is null)
-            return $"best {PalDisplayName(species)}: no owned candidate in loaded save";
+            return $"  • {PalDisplayName(species)}\n    No owned candidate in the current save filter.";
 
         var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
         var unwanted = UnwantedPassiveCount(pal, desiredPassives);
         var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
-        var matchText = desiredPassives.Count == 0 ? $" | clean passives: {pal.PassiveSkills.Count}" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))} | extra passives: {unwanted}";
+        var matchText = desiredPassives.Count == 0
+            ? $"Clean score: {pal.PassiveSkills.Count} passive skills"
+            : $"Matches: {matched.Count}/{desiredPassives.Count} ({(matched.Count == 0 ? "none" : string.Join(", ", matched))}) · Extra passives: {unwanted}";
         var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
-        return $"best {PalDisplayName(species)}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
+        return string.Create(
+            CultureInfo.CurrentCulture,
+            $"  • {PalDisplayName(species)}{nickname}\n    Owner: {pal.Owner} · Storage: {pal.Storage} · Level {pal.Level} · {CleanGender(pal.Gender)}\n    {matchText}\n    Passives: {passives}");
     }
+
+    private static string CleanGender(string gender)
+        => gender.Replace("EPalGenderType::", string.Empty, StringComparison.Ordinal);
 
     private static int PassiveMatchCount(ParsedPal pal, List<string> desiredPassives)
         => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase));
