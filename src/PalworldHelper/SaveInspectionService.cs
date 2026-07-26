@@ -51,7 +51,8 @@ public static class SaveInspectionService
         {
             var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
             var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
-            output.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{pal.Owner}: {pal.Species}{nickname} | Level {pal.Level} | {pal.Gender} | {passives}"));
+            var storage = string.IsNullOrWhiteSpace(pal.Storage) ? "World / base" : pal.Storage;
+            output.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{pal.Owner}: {pal.Species}{nickname} | {storage} | Level {pal.Level} | {pal.Gender} | {passives}"));
         }
         return output.ToString();
     }

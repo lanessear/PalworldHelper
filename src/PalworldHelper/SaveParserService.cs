@@ -32,6 +32,9 @@ public sealed class ParsedPal
     public string Gender { get; set; } = "";
     public List<string> PassiveSkills { get; set; } = [];
     public string InstanceId { get; set; } = "";
+    public string Storage { get; set; } = "";
+    public string ContainerId { get; set; } = "";
+    public int SlotIndex { get; set; }
     public string PassiveSkillsText => string.Join(", ", PassiveSkills);
 }
 
@@ -68,6 +71,12 @@ public static class SaveParserService
             };
             process.StartInfo.ArgumentList.Add(savePath);
             process.StartInfo.ArgumentList.Add(outputPath);
+            var playersDirectory = FindPlayersDirectory(savePath);
+            if (!string.IsNullOrWhiteSpace(playersDirectory))
+            {
+                process.StartInfo.ArgumentList.Add("--players-dir");
+                process.StartInfo.ArgumentList.Add(playersDirectory);
+            }
             process.Start();
             var stderrTask = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync().ConfigureAwait(false);
@@ -85,5 +94,20 @@ public static class SaveParserService
         {
             if (File.Exists(outputPath)) File.Delete(outputPath);
         }
+    }
+
+    private static string? FindPlayersDirectory(string savePath)
+    {
+        var levelDirectory = Path.GetDirectoryName(savePath);
+        if (string.IsNullOrWhiteSpace(levelDirectory)) return null;
+
+        var direct = Path.Combine(levelDirectory, "Players");
+        if (Directory.Exists(direct)) return direct;
+
+        var parent = Directory.GetParent(levelDirectory)?.FullName;
+        if (string.IsNullOrWhiteSpace(parent)) return null;
+
+        var sibling = Path.Combine(parent, "Players");
+        return Directory.Exists(sibling) ? sibling : null;
     }
 }
