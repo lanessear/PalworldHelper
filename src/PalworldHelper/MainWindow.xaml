@@ -76,135 +76,160 @@
     <TabControl Grid.Row="2"
                 Background="{StaticResource Panel}"
                 BorderBrush="{StaticResource Border}">
-      <TabItem Header="Server">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-          <Grid Margin="20">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="310"/>
-              <ColumnDefinition Width="20"/>
-              <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+      <TabItem Header="Save Data">
+        <Grid Margin="20">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource Card}">
-              <DockPanel>
-                <StackPanel DockPanel.Dock="Top">
-                  <TextBlock Text="Server Profiles" FontSize="20" FontWeight="SemiBold"/>
-                  <TextBlock Text="Save multiple servers and switch without retyping credentials."
-                             Foreground="{StaticResource Muted}"
-                             TextWrapping="Wrap"
-                             Margin="0,5,0,12"/>
-                </StackPanel>
-                <WrapPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-                  <Button Content="New" Click="NewProfile_Click"/>
-                  <Button Content="Delete" Click="DeleteProfile_Click" Background="#FF8796"/>
-                </WrapPanel>
-                <ListBox x:Name="ProfilesList"
-                         SelectionChanged="ProfilesList_SelectionChanged"
-                         DisplayMemberPath="Name"/>
-              </DockPanel>
-            </Border>
-
-            <Border Grid.Column="2" Style="{StaticResource Card}">
-              <Grid>
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Your Palworld Save" FontSize="20" FontWeight="SemiBold"/>
+              <TextBlock Margin="0,6,0,0"
+                         TextWrapping="Wrap"
+                         Foreground="{StaticResource Muted}"
+                         Text="Most players only need to select their local Level.sav. If the matching Players folder is nearby, PalworldHelper also reads party and Dimensional Pal Storage ownership. Server download is optional and mostly useful for server owners."/>
+              <Border Background="{StaticResource Panel2}"
+                      CornerRadius="8"
+                      Padding="12"
+                      Margin="0,12,0,0">
                 <StackPanel>
-                  <TextBlock Text="Connection Settings" FontSize="20" FontWeight="SemiBold"/>
-                  <TextBlock Text="Fill in the server once, then test, find the save, and download it into Save Data."
+                  <TextBlock Text="How to find your player data"
+                             FontWeight="SemiBold"/>
+                  <TextBlock Margin="0,6,0,0"
+                             TextWrapping="Wrap"
                              Foreground="{StaticResource Muted}"
+                             Text="Select the save file named Level.sav. For local worlds it is usually under %LOCALAPPDATA%\Pal\Saved\SaveGames. For shared server saves, ask the server owner for Level.sav plus the Players folder from the same save directory."/>
+                  <TextBlock Margin="0,6,0,0"
                              TextWrapping="Wrap"
-                             Margin="0,5,0,12"/>
-
-                  <Label Content="Profile name"/>
-                  <TextBox x:Name="ProfileName"/>
-
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*"/>
-                      <ColumnDefinition Width="120"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                      <Label Content="Host / IP"/>
-                      <TextBox x:Name="Host"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                      <Label Content="SSH port"/>
-                      <TextBox x:Name="Port" Text="22"/>
-                    </StackPanel>
-                  </Grid>
-
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*"/>
-                      <ColumnDefinition Width="220"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                      <Label Content="Username"/>
-                      <TextBox x:Name="Username"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                      <Label Content="Authentication"/>
-                      <ComboBox x:Name="Authentication" SelectionChanged="Authentication_SelectionChanged">
-                        <ComboBoxItem Content="Password" IsSelected="True"/>
-                        <ComboBoxItem Content="SSH key"/>
-                      </ComboBox>
-                    </StackPanel>
-                  </Grid>
-
-                  <StackPanel x:Name="PasswordPanel">
-                    <Label Content="Password (encrypted locally with Windows DPAPI)"/>
-                    <PasswordBox x:Name="Password"/>
-                  </StackPanel>
-
-                  <StackPanel x:Name="KeyPanel" Visibility="Collapsed">
-                    <Label Content="Private SSH key path"/>
-                    <DockPanel>
-                      <Button DockPanel.Dock="Right"
-                              Content="Browse"
-                              Margin="8,0,0,0"
-                              Click="PickKey_Click"/>
-                      <TextBox x:Name="PrivateKeyPath"/>
-                    </DockPanel>
-                  </StackPanel>
-
-                  <Label Content="Remote path to Level.sav"/>
-                  <DockPanel>
-                    <Button DockPanel.Dock="Right"
-                            Content="Find automatically"
-                            Margin="8,0,0,0"
-                            Click="FindRemoteSave_Click"/>
-                    <TextBox x:Name="RemoteSavePath"
-                             ToolTip="May be left empty. The application can search the server for Level.sav automatically."/>
-                  </DockPanel>
-
-                  <Label Content="Player name"/>
-                  <TextBox x:Name="PlayerName" Text="Lanessear"/>
+                             Foreground="{StaticResource Muted}"
+                             Text="Tip: keep Level.sav and the Players folder together before selecting the save. Without Players files, ownership details may be incomplete."/>
                 </StackPanel>
+              </Border>
+              <DockPanel Margin="0,12,0,0">
+                <Button DockPanel.Dock="Right"
+                        Content="Select Level.sav"
+                        Margin="8,0,0,0"
+                        Click="PickLocalSave_Click"/>
+                <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
+              </DockPanel>
+              <TextBlock x:Name="SaveStatus"
+                         Foreground="{StaticResource Muted}"
+                         TextWrapping="Wrap"
+                         Margin="0,8,0,0"/>
+            </StackPanel>
+          </Border>
 
-                <WrapPanel Grid.Row="1" Margin="0,14,0,0">
-                  <Button Content="Save profile" Click="SaveProfile_Click"/>
-                  <Button Content="Test connection" Click="TestConnection_Click"/>
-                  <Button Content="Download save" Click="DownloadSave_Click"/>
-                </WrapPanel>
-
-                <Border Grid.Row="2"
-                        Background="{StaticResource Panel2}"
-                        CornerRadius="8"
-                        Padding="12"
-                        Margin="0,12,0,0">
-                  <TextBlock x:Name="ServerStatus"
-                             Text="No server action yet."
-                             TextWrapping="Wrap"
-                             Foreground="{StaticResource Muted}"/>
-                </Border>
-              </Grid>
+          <UniformGrid Grid.Row="1" Columns="4" Margin="0,14,0,14">
+            <Border Style="{StaticResource StatCard}">
+              <StackPanel>
+                <TextBlock Text="Players" Foreground="{StaticResource Muted}"/>
+                <TextBlock x:Name="SavePlayerCount" Text="—" FontSize="28" FontWeight="Bold"/>
+              </StackPanel>
             </Border>
+            <Border Style="{StaticResource StatCard}">
+              <StackPanel>
+                <TextBlock Text="Owned Pals" Foreground="{StaticResource Muted}"/>
+                <TextBlock x:Name="SavePalCount" Text="—" FontSize="28" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource StatCard}">
+              <StackPanel>
+                <TextBlock Text="Species" Foreground="{StaticResource Muted}"/>
+                <TextBlock x:Name="SaveSpeciesCount" Text="—" FontSize="28" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource StatCard}" Margin="0">
+              <StackPanel>
+                <TextBlock Text="Passive Skills" Foreground="{StaticResource Muted}"/>
+                <TextBlock x:Name="SavePassiveCount" Text="—" FontSize="28" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+          </UniformGrid>
+
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="1.05*"/>
+              <ColumnDefinition Width="1.95*"/>
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="Players">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Bottom"
+                           x:Name="SaveOwnerFilterStatus"
+                           Text="Click a player to filter owned Pals."
+                           Foreground="{StaticResource Muted}"
+                           Margin="8,8,8,0"/>
+                <ListView x:Name="SavePlayersList"
+                          SelectionChanged="SavePlayersList_SelectionChanged"
+                          GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="180"/>
+                      <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}" Width="70"/>
+                      <GridViewColumn Header="UID" DisplayMemberBinding="{Binding PlayerUid}" Width="260"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
+              </DockPanel>
+            </GroupBox>
+
+            <GroupBox Grid.Column="1" Header="Owned Pals" Margin="14,0,0,0">
+              <DockPanel>
+                <Button DockPanel.Dock="Bottom"
+                        Content="Show all owners"
+                        Click="ShowAllOwners_Click"
+                        HorizontalAlignment="Left"
+                        Padding="10,5"
+                        Margin="8,8,0,0"/>
+                <ListView x:Name="SavePalsList"
+                          GridViewColumnHeader.Click="GridViewColumnHeader_Click">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="Species" DisplayMemberBinding="{Binding Species}" Width="140"/>
+                      <GridViewColumn Header="Nickname" DisplayMemberBinding="{Binding Nickname}" Width="130"/>
+                      <GridViewColumn Header="Owner" DisplayMemberBinding="{Binding Owner}" Width="140"/>
+                      <GridViewColumn Header="Storage" DisplayMemberBinding="{Binding Storage}" Width="150"/>
+                      <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}" Width="60"/>
+                      <GridViewColumn Header="Gender" DisplayMemberBinding="{Binding Gender}" Width="80"/>
+                      <GridViewColumn Header="Passives" DisplayMemberBinding="{Binding PassiveSkills}" Width="320"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
+              </DockPanel>
+            </GroupBox>
           </Grid>
-        </ScrollViewer>
+
+          <Expander Grid.Row="3" Header="Technical details" Margin="0,12,0,0">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <GroupBox Header="File and parser information" Margin="0,0,8,0">
+                <TextBox x:Name="SaveMetadata"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         MinHeight="120"
+                         Padding="8"
+                         FontFamily="Consolas"/>
+              </GroupBox>
+              <GroupBox Header="Header / hex preview" Grid.Column="1" Margin="8,0,0,0">
+                <TextBox x:Name="SaveHexPreview"
+                         IsReadOnly="True"
+                         TextWrapping="NoWrap"
+                         HorizontalScrollBarVisibility="Auto"
+                         VerticalScrollBarVisibility="Auto"
+                         MinHeight="120"
+                         Padding="8"
+                         FontFamily="Consolas"/>
+              </GroupBox>
+            </Grid>
+          </Expander>
+        </Grid>
       </TabItem>
 
       <TabItem Header="Breeding Chain">
@@ -374,143 +399,143 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Save Data">
-        <Grid Margin="20">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-          </Grid.RowDefinitions>
-
-          <Border Style="{StaticResource Card}">
-            <StackPanel>
-              <TextBlock Text="Palworld Save Data" FontSize="20" FontWeight="SemiBold"/>
-              <TextBlock Margin="0,6,0,0"
-                         TextWrapping="Wrap"
-                         Foreground="{StaticResource Muted}"
-                         Text="Select Level.sav locally or download it from a server. If a Players folder exists next to the save, PalworldHelper uses it to include party and Dimensional Pal Storage ownership. Players and owned Pals are linked: select a player to filter ownership."/>
-              <DockPanel Margin="0,12,0,0">
-                <Button DockPanel.Dock="Right"
-                        Content="Select Level.sav"
-                        Margin="8,0,0,0"
-                        Click="PickLocalSave_Click"/>
-                <TextBox x:Name="LocalSavePath" IsReadOnly="True"/>
-              </DockPanel>
-              <TextBlock x:Name="SaveStatus"
-                         Foreground="{StaticResource Muted}"
-                         TextWrapping="Wrap"
-                         Margin="0,8,0,0"/>
-            </StackPanel>
-          </Border>
-
-          <UniformGrid Grid.Row="1" Columns="4" Margin="0,14,0,14">
-            <Border Style="{StaticResource StatCard}">
-              <StackPanel>
-                <TextBlock Text="Players" Foreground="{StaticResource Muted}"/>
-                <TextBlock x:Name="SavePlayerCount" Text="—" FontSize="28" FontWeight="Bold"/>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource StatCard}">
-              <StackPanel>
-                <TextBlock Text="Owned Pals" Foreground="{StaticResource Muted}"/>
-                <TextBlock x:Name="SavePalCount" Text="—" FontSize="28" FontWeight="Bold"/>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource StatCard}">
-              <StackPanel>
-                <TextBlock Text="Species" Foreground="{StaticResource Muted}"/>
-                <TextBlock x:Name="SaveSpeciesCount" Text="—" FontSize="28" FontWeight="Bold"/>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource StatCard}" Margin="0">
-              <StackPanel>
-                <TextBlock Text="Passive Skills" Foreground="{StaticResource Muted}"/>
-                <TextBlock x:Name="SavePassiveCount" Text="—" FontSize="28" FontWeight="Bold"/>
-              </StackPanel>
-            </Border>
-          </UniformGrid>
-
-          <Grid Grid.Row="2">
+      <TabItem Header="Optional Server Import">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <Grid Margin="20">
             <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="1.05*"/>
-              <ColumnDefinition Width="1.95*"/>
+              <ColumnDefinition Width="310"/>
+              <ColumnDefinition Width="20"/>
+              <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <GroupBox Header="Players">
-              <DockPanel>
-                <TextBlock DockPanel.Dock="Bottom"
-                           x:Name="SaveOwnerFilterStatus"
-                           Text="Click a player to filter owned Pals."
-                           Foreground="{StaticResource Muted}"
-                           Margin="8,8,8,0"/>
-                <ListView x:Name="SavePlayersList"
-                          SelectionChanged="SavePlayersList_SelectionChanged"
-                          GridViewColumnHeader.Click="GridViewColumnHeader_Click">
-                  <ListView.View>
-                    <GridView>
-                      <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="180"/>
-                      <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}" Width="70"/>
-                      <GridViewColumn Header="UID" DisplayMemberBinding="{Binding PlayerUid}" Width="260"/>
-                    </GridView>
-                  </ListView.View>
-                </ListView>
-              </DockPanel>
-            </GroupBox>
 
-            <GroupBox Grid.Column="1" Header="Owned Pals" Margin="14,0,0,0">
+            <Border Style="{StaticResource Card}">
               <DockPanel>
-                <Button DockPanel.Dock="Bottom"
-                        Content="Show all owners"
-                        Click="ShowAllOwners_Click"
-                        HorizontalAlignment="Left"
-                        Padding="10,5"
-                        Margin="8,8,0,0"/>
-                <ListView x:Name="SavePalsList"
-                          GridViewColumnHeader.Click="GridViewColumnHeader_Click">
-                  <ListView.View>
-                    <GridView>
-                      <GridViewColumn Header="Species" DisplayMemberBinding="{Binding Species}" Width="140"/>
-                      <GridViewColumn Header="Nickname" DisplayMemberBinding="{Binding Nickname}" Width="130"/>
-                      <GridViewColumn Header="Owner" DisplayMemberBinding="{Binding Owner}" Width="140"/>
-                      <GridViewColumn Header="Storage" DisplayMemberBinding="{Binding Storage}" Width="150"/>
-                      <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}" Width="60"/>
-                      <GridViewColumn Header="Gender" DisplayMemberBinding="{Binding Gender}" Width="80"/>
-                      <GridViewColumn Header="Passives" DisplayMemberBinding="{Binding PassiveSkills}" Width="320"/>
-                    </GridView>
-                  </ListView.View>
-                </ListView>
+                <StackPanel DockPanel.Dock="Top">
+                  <TextBlock Text="Saved server imports" FontSize="20" FontWeight="SemiBold"/>
+                  <TextBlock Text="Optional profiles for people who can access a Palworld server via SFTP."
+                             Foreground="{StaticResource Muted}"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,12"/>
+                </StackPanel>
+                <WrapPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                  <Button Content="New" Click="NewProfile_Click"/>
+                  <Button Content="Delete" Click="DeleteProfile_Click" Background="#FF8796"/>
+                </WrapPanel>
+                <ListBox x:Name="ProfilesList"
+                         SelectionChanged="ProfilesList_SelectionChanged"
+                         DisplayMemberPath="Name"/>
               </DockPanel>
-            </GroupBox>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                  <TextBlock Text="Optional server download" FontSize="20" FontWeight="SemiBold"/>
+                  <TextBlock Text="Use this only if you own or administer a server, or if the owner gave you SFTP access. Everyone else can stay on Save Data and select Level.sav locally."
+                             Foreground="{StaticResource Muted}"
+                             TextWrapping="Wrap"
+                             Margin="0,5,0,12"/>
+                  <Border Background="{StaticResource Panel2}"
+                          CornerRadius="8"
+                          Padding="12"
+                          Margin="0,0,0,12">
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{StaticResource Muted}"
+                               Text="If you are not the server owner, ask for the save folder instead: Level.sav plus the Players folder. Put both in the same local folder, then select Level.sav on the Save Data tab."/>
+                  </Border>
+
+                  <Label Content="Profile name"/>
+                  <TextBox x:Name="ProfileName"/>
+
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="120"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                      <Label Content="Host / IP"/>
+                      <TextBox x:Name="Host"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                      <Label Content="SSH port"/>
+                      <TextBox x:Name="Port" Text="22"/>
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="220"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                      <Label Content="Username"/>
+                      <TextBox x:Name="Username"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                      <Label Content="Authentication"/>
+                      <ComboBox x:Name="Authentication" SelectionChanged="Authentication_SelectionChanged">
+                        <ComboBoxItem Content="Password" IsSelected="True"/>
+                        <ComboBoxItem Content="SSH key"/>
+                      </ComboBox>
+                    </StackPanel>
+                  </Grid>
+
+                  <StackPanel x:Name="PasswordPanel">
+                    <Label Content="Password (encrypted locally with Windows DPAPI)"/>
+                    <PasswordBox x:Name="Password"/>
+                  </StackPanel>
+
+                  <StackPanel x:Name="KeyPanel" Visibility="Collapsed">
+                    <Label Content="Private SSH key path"/>
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right"
+                              Content="Browse"
+                              Margin="8,0,0,0"
+                              Click="PickKey_Click"/>
+                      <TextBox x:Name="PrivateKeyPath"/>
+                    </DockPanel>
+                  </StackPanel>
+
+                  <Label Content="Remote path to Level.sav"/>
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right"
+                            Content="Find automatically"
+                            Margin="8,0,0,0"
+                            Click="FindRemoteSave_Click"/>
+                    <TextBox x:Name="RemoteSavePath"
+                             ToolTip="May be left empty. The application can search the server for Level.sav automatically."/>
+                  </DockPanel>
+
+                  <Label Content="Player name"/>
+                  <TextBox x:Name="PlayerName" Text="Lanessear"/>
+                </StackPanel>
+
+                <WrapPanel Grid.Row="1" Margin="0,14,0,0">
+                  <Button Content="Save profile" Click="SaveProfile_Click"/>
+                  <Button Content="Test connection" Click="TestConnection_Click"/>
+                  <Button Content="Download save" Click="DownloadSave_Click"/>
+                </WrapPanel>
+
+                <Border Grid.Row="2"
+                        Background="{StaticResource Panel2}"
+                        CornerRadius="8"
+                        Padding="12"
+                        Margin="0,12,0,0">
+                  <TextBlock x:Name="ServerStatus"
+                             Text="No server action yet."
+                             TextWrapping="Wrap"
+                             Foreground="{StaticResource Muted}"/>
+                </Border>
+              </Grid>
+            </Border>
           </Grid>
-
-          <Expander Grid.Row="3" Header="Technical details" Margin="0,12,0,0">
-            <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-              </Grid.ColumnDefinitions>
-              <GroupBox Header="File and parser information" Margin="0,0,8,0">
-                <TextBox x:Name="SaveMetadata"
-                         IsReadOnly="True"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         MinHeight="120"
-                         Padding="8"
-                         FontFamily="Consolas"/>
-              </GroupBox>
-              <GroupBox Header="Header / hex preview" Grid.Column="1" Margin="8,0,0,0">
-                <TextBox x:Name="SaveHexPreview"
-                         IsReadOnly="True"
-                         TextWrapping="NoWrap"
-                         HorizontalScrollBarVisibility="Auto"
-                         VerticalScrollBarVisibility="Auto"
-                         MinHeight="120"
-                         Padding="8"
-                         FontFamily="Consolas"/>
-              </GroupBox>
-            </Grid>
-          </Expander>
-        </Grid>
+        </ScrollViewer>
       </TabItem>
 
       <TabItem Header="Maintenance">
