@@ -28,6 +28,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         _settings = _settingsService.Load();
         PassiveSkillPicker.ItemsSource = _passiveSkillOptions;
+        RefreshBreedingWishlist();
+        RenderPassiveSkillTags();
         RefreshProfiles();
 
         LoadInitialBreedingData();
@@ -411,6 +413,12 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private void AddPassiveSkillTag(string skill)
     {
         if (_selectedPassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)) return;
+        if (_selectedPassiveSkills.Count >= 4)
+        {
+            PassiveSkillLimitStatus.Text = "A Pal can have at most 4 passive skills. Remove one before adding another.";
+            return;
+        }
+
         _selectedPassiveSkills.Add(skill);
         RenderPassiveSkillTags();
     }
@@ -438,7 +446,104 @@ The compact format may use "names" instead of "pals". Every result must contain 
             button.Click += RemovePassiveSkill_Click;
             PassiveSkillTags.Children.Add(button);
         }
+
+        PassiveSkillLimitStatus.Text = $"{_selectedPassiveSkills.Count}/4 passive skills selected. Cleaner parents with fewer extra passives are ranked higher.";
     }
+
+    private void SaveBreedingGoal_Click(object sender, RoutedEventArgs e)
+    {
+        var child = SelectedPalName(TargetPal);
+        if (string.IsNullOrWhiteSpace(child))
+        {
+            ParentDetails.Text = "Select a desired child Pal before saving a breeding goal.";
+            return;
+        }
+
+        var passives = DesiredPassives().Take(4).ToList();
+        var existing = _settings.BreedingWishlist.FirstOrDefault(item =>
+            item.Child.Equals(child, StringComparison.OrdinalIgnoreCase)
+            && item.PassiveSkills.SequenceEqual(passives, StringComparer.OrdinalIgnoreCase));
+
+        if (existing is null)
+        {
+            _settings.BreedingWishlist.Add(new BreedingWishlistItem
+            {
+                Child = child,
+                PassiveSkills = passives,
+                CreatedAt = DateTimeOffset.UtcNow
+            });
+        }
+
+        _settingsService.Save(_settings);
+        RefreshBreedingWishlist();
+        SelectBreedingWishlistItem(child, passives);
+        ParentDetails.Text = $"Saved breeding goal: {PalDisplayName(child)}{FormatPassiveSuffix(passives)}.";
+    }
+
+    private void LoadBreedingGoal_Click(object sender, RoutedEventArgs e)
+    {
+        if (BreedingWishlistList.SelectedItem is BreedingWishlistRow row)
+            LoadBreedingGoal(row);
+    }
+
+    private void RemoveBreedingGoal_Click(object sender, RoutedEventArgs e)
+    {
+        if (BreedingWishlistList.SelectedItem is not BreedingWishlistRow row) return;
+        _settings.BreedingWishlist.RemoveAll(item => item.Child.Equals(row.Child, StringComparison.OrdinalIgnoreCase)
+            && string.Join(", ", item.PassiveSkills.Distinct(StringComparer.OrdinalIgnoreCase).Take(4)).Equals(row.PassiveSkills, StringComparison.OrdinalIgnoreCase));
+        _settingsService.Save(_settings);
+        RefreshBreedingWishlist();
+    }
+
+    private void BreedingWishlistList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (BreedingWishlistList.SelectedItem is BreedingWishlistRow row)
+            ParentDetails.Text = $"Saved goal selected: {row.Summary}. Click Load selected to use it.";
+    }
+
+    private void LoadBreedingGoal(BreedingWishlistRow row)
+    {
+        TargetPal.SelectedItem = TargetPal.Items.Cast<PalNameOption>().FirstOrDefault(option => option.Name.Equals(row.Child, StringComparison.OrdinalIgnoreCase));
+        TargetPal.Text = PalDisplayName(row.Child);
+        _selectedPassiveSkills.Clear();
+        _selectedPassiveSkills.AddRange(row.PassiveSkills.Split(", ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(4));
+        RenderPassiveSkillTags();
+        ParentDetails.Text = $"Loaded breeding goal: {row.Summary}.";
+    }
+
+    private void RefreshBreedingWishlist()
+    {
+        if (BreedingWishlistList is null) return;
+
+        BreedingWishlistList.ItemsSource = _settings.BreedingWishlist
+            .Where(item => !string.IsNullOrWhiteSpace(item.Child))
+            .OrderBy(item => PalDisplayName(item.Child), StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(item => string.Join(", ", item.PassiveSkills), StringComparer.CurrentCultureIgnoreCase)
+            .Select(item =>
+            {
+                var passives = item.PassiveSkills.Distinct(StringComparer.OrdinalIgnoreCase).Take(4).ToList();
+                var passiveText = string.Join(", ", passives);
+                var displayName = PalDisplayName(item.Child);
+                return new BreedingWishlistRow(
+                    item.Child,
+                    displayName,
+                    passiveText,
+                    $"{displayName}{FormatPassiveSuffix(passives)}");
+            })
+            .ToList();
+    }
+
+    private void SelectBreedingWishlistItem(string child, List<string> passives)
+    {
+        var passiveText = string.Join(", ", passives);
+        BreedingWishlistList.SelectedItem = BreedingWishlistList.Items
+            .Cast<BreedingWishlistRow>()
+            .FirstOrDefault(row => row.Child.Equals(child, StringComparison.OrdinalIgnoreCase)
+                && row.PassiveSkills.Equals(passiveText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string FormatPassiveSuffix(List<string> passives)
+        => passives.Count == 0 ? "" : $" · {string.Join(", ", passives)}";
 
     private void ResultList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
