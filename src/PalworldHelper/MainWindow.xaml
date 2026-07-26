@@ -20,7 +20,7 @@
       <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Top">
           <TextBlock Text="PalworldHelper"
-                     Foreground="White"
+                     Foreground="{DynamicResource SidebarText}"
                      FontSize="26"
                      FontWeight="Bold"/>
           <TextBlock Text="Save-aware breeding planner"
@@ -28,23 +28,23 @@
                      TextWrapping="Wrap"
                      Margin="0,4,0,18"/>
 
-          <Border Background="#7F1D1D"
-                  BorderBrush="#FCA5A5"
+          <Border Background="{DynamicResource DangerSoft}"
+                  BorderBrush="{DynamicResource Danger}"
                   BorderThickness="1"
                   CornerRadius="12"
                   Padding="12"
                   Margin="0,0,0,16">
             <StackPanel>
               <TextBlock Text="AI-created project"
-                         Foreground="White"
+                         Foreground="{DynamicResource SidebarText}"
                          FontWeight="ExtraBold"/>
               <TextBlock Text="AI designs, writes, documents, tests, and maintains this project. The human owner reviews and approves the results."
-                         Foreground="#FEE2E2"
+                         Foreground="{DynamicResource SidebarText}"
                          TextWrapping="Wrap"
                          FontSize="12"
                          Margin="0,5,0,0"/>
               <TextBlock Text="Not presented as human-developed software."
-                         Foreground="#FEE2E2"
+                         Foreground="{DynamicResource SidebarMuted}"
                          FontStyle="Italic"
                          FontSize="12"
                          Margin="0,5,0,0"/>
@@ -80,11 +80,11 @@
                   Margin="0,18,0,0">
             <StackPanel>
               <TextBlock Text="Session"
-                         Foreground="White"
+                         Foreground="{DynamicResource SidebarText}"
                          FontWeight="SemiBold"/>
               <TextBlock x:Name="DashboardSaveStatus"
                          Text="No save loaded"
-                         Foreground="White"
+                         Foreground="{DynamicResource SidebarText}"
                          TextWrapping="Wrap"
                          Margin="0,8,0,0"/>
               <TextBlock x:Name="DashboardCacheStatus"
@@ -99,7 +99,7 @@
                          FontSize="12"/>
               <TextBlock x:Name="DashboardOwnerStatus"
                          Text="All owners"
-                         Foreground="White"
+                         Foreground="{DynamicResource SidebarText}"
                          TextWrapping="Wrap"/>
               <TextBlock Text="Breeding data"
                          Foreground="{DynamicResource SidebarMuted}"
@@ -107,7 +107,7 @@
                          Margin="0,8,0,0"/>
               <TextBlock x:Name="DashboardBreedingStatus"
                          Text="Loading default data"
-                         Foreground="White"
+                         Foreground="{DynamicResource SidebarText}"
                          TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
@@ -347,7 +347,7 @@
                 <DockPanel>
                   <Border x:Name="BreedingDataKindBadge"
                           DockPanel.Dock="Left"
-                          Background="#2563EB"
+                          Background="{DynamicResource Primary}"
                           CornerRadius="6"
                           Padding="8,3"
                           Margin="0,0,8,0">
