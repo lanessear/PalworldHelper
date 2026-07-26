@@ -268,9 +268,10 @@ public partial class MainWindow : Window
         SetBrush("SuccessSoft", dark ? "#123D25" : "#DCFCE7");
         SetBrush("WarningSoft", dark ? "#4A3412" : "#FEF3C7");
         SetBrush("Border", dark ? "#2F3A4F" : "#D7DEE8");
-        SetBrush("Sidebar", dark ? "#070B15" : "#111827");
-        SetBrush("SidebarMuted", dark ? "#B8C4D8" : "#CBD5E1");
-        SetBrush("SidebarPanel", dark ? "#151D2C" : "#243044");
+        SetBrush("Sidebar", dark ? "#0B1020" : "#F2F5FA");
+        SetBrush("SidebarText", dark ? "#F8FAFC" : "#172033");
+        SetBrush("SidebarMuted", dark ? "#B8C4D8" : "#64748B");
+        SetBrush("SidebarPanel", dark ? "#172033" : "#FFFFFF");
 
         if (ThemeToggleButton is not null)
         {

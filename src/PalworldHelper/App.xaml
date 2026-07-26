@@ -18,9 +18,10 @@
     <SolidColorBrush x:Key="SuccessSoft" Color="#DCFCE7"/>
     <SolidColorBrush x:Key="WarningSoft" Color="#FEF3C7"/>
     <SolidColorBrush x:Key="Border" Color="#D7DEE8"/>
-    <SolidColorBrush x:Key="Sidebar" Color="#111827"/>
-    <SolidColorBrush x:Key="SidebarMuted" Color="#CBD5E1"/>
-    <SolidColorBrush x:Key="SidebarPanel" Color="#243044"/>
+    <SolidColorBrush x:Key="Sidebar" Color="#F2F5FA"/>
+    <SolidColorBrush x:Key="SidebarText" Color="#172033"/>
+    <SolidColorBrush x:Key="SidebarMuted" Color="#64748B"/>
+    <SolidColorBrush x:Key="SidebarPanel" Color="#FFFFFF"/>
 
     <Style TargetType="Window">
       <Setter Property="Background" Value="{DynamicResource Bg}"/>
@@ -103,6 +104,7 @@
                     Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="Center"
+                                TextElement.Foreground="{TemplateBinding Foreground}"
                                 RecognizesAccessKey="True"/>
             </Border>
             <ControlTemplate.Triggers>
@@ -134,12 +136,13 @@
       <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
     </Style>
     <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-      <Setter Property="Background" Value="#00000000"/>
-      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="{DynamicResource SidebarPanel}"/>
+      <Setter Property="Foreground" Value="{DynamicResource SidebarText}"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Padding" Value="14,11"/>
       <Setter Property="Margin" Value="0,5,0,0"/>
-      <Setter Property="BorderBrush" Value="#00000000"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+      <Setter Property="BorderThickness" Value="1"/>
     </Style>
 
     <Style TargetType="TabItem">
