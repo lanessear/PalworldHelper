@@ -495,7 +495,36 @@ The compact format may use "names" instead of "pals". Every result must contain 
         }
         else
         {
-            path = _breeding.FindShortestFromAvailable(target, GetAvailableSpeciesOrNull());
+            var possiblePaths = _breeding.FindAllShortestPathsFromAvailable(target, GetAvailableSpeciesOrNull());
+            if (possiblePaths.Count == 0)
+            {
+                ResultList.Items.Add(new BreedingResultItem(HasParsedSave
+                    ? "No breeding chain was found using the Pals available in the loaded save."
+                    : "No breeding chain was found.", string.Empty));
+                return;
+            }
+
+            ResultList.Items.Add(new BreedingResultItem($"Possible shortest breeding chains for {PalDisplayName(target)}:", target));
+            for (var chainIndex = 0; chainIndex < possiblePaths.Count; chainIndex++)
+            {
+                var chain = possiblePaths[chainIndex];
+                for (var stepIndex = 0; stepIndex < chain.Count; stepIndex++)
+                {
+                    var step = chain[stepIndex];
+                    var parentMarker = step.ParentOwned ? "owned" : "bred";
+                    var mateMarker = step.MateOwned ? "owned" : "bred";
+                    var prefix = chain.Count > 1 ? $"{chainIndex + 1}.{stepIndex + 1}. " : $"{stepIndex + 1}. ";
+                    ResultList.Items.Add(new BreedingResultItem(
+                        $"{prefix}{PalDisplayName(step.Parent)} ({parentMarker}) + {PalDisplayName(step.Mate)} ({mateMarker})  →  {PalDisplayName(step.Child)}",
+                        step.Child));
+                }
+
+                if (chainIndex < possiblePaths.Count - 1)
+                    ResultList.Items.Add(new BreedingResultItem(string.Empty, target));
+            }
+
+            ShowParentChoices(target);
+            return;
         }
 
         if (path is null)

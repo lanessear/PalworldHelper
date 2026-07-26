@@ -210,6 +210,87 @@ public sealed class BreedingService
         return null;
     }
 
+    public IReadOnlyList<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromAvailable(string target, IReadOnlySet<string>? availableSpecies)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return [];
+
+        var unrestricted = availableSpecies is null || availableSpecies.Count == 0;
+        var startingSpecies = Names
+            .Where(species => !species.Equals(target, StringComparison.OrdinalIgnoreCase))
+            .Where(species => unrestricted || availableSpecies!.Contains(species))
+            .ToList();
+
+        if (startingSpecies.Count == 0)
+            return [];
+
+        var shortestPaths = new List<IReadOnlyList<BreedingPlanStep>>();
+        var bestLength = int.MaxValue;
+        var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var start in startingSpecies)
+        {
+            var pathsFromStart = FindAllShortestPathsFromStart(start, target, availableSpecies);
+            foreach (var path in pathsFromStart)
+            {
+                if (path.Count < bestLength)
+                {
+                    bestLength = path.Count;
+                    shortestPaths.Clear();
+                }
+
+                if (path.Count != bestLength) continue;
+
+                var canonicalPath = string.Join("||", path.Select(step => $"{step.Parent}|{step.Mate}|{step.Child}|{step.ParentOwned}|{step.MateOwned}"));
+                if (seenPaths.Add(canonicalPath))
+                    shortestPaths.Add(path);
+            }
+        }
+
+        return shortestPaths;
+    }
+
+    private IReadOnlyList<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromStart(string start, string target, IReadOnlySet<string>? availableSpecies)
+    {
+        if (start.Equals(target, StringComparison.OrdinalIgnoreCase)) return [[]];
+
+        var unrestricted = availableSpecies is null || availableSpecies.Count == 0;
+        var queue = new Queue<(string Current, IReadOnlyList<BreedingPlanStep> Path)>();
+        var paths = new List<IReadOnlyList<BreedingPlanStep>>();
+        var bestLength = int.MaxValue;
+
+        queue.Enqueue((start, []));
+        while (queue.Count > 0)
+        {
+            var (current, currentPath) = queue.Dequeue();
+            if (currentPath.Count >= bestLength)
+                continue;
+
+            if (!_graph.TryGetValue(current, out var edges)) continue;
+
+            foreach (var edge in edges)
+            {
+                if (!unrestricted && !availableSpecies!.Contains(edge.mate)) continue;
+                var nextPath = currentPath.Append(new BreedingPlanStep(current, edge.mate, edge.child, unrestricted || availableSpecies?.Contains(current) == true, unrestricted || availableSpecies?.Contains(edge.mate) == true)).ToList();
+                if (edge.child.Equals(target, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (nextPath.Count < bestLength)
+                    {
+                        bestLength = nextPath.Count;
+                        paths.Clear();
+                    }
+
+                    if (nextPath.Count == bestLength)
+                        paths.Add(nextPath);
+                    continue;
+                }
+
+                queue.Enqueue((edge.child, nextPath));
+            }
+        }
+
+        return paths;
+    }
+
     public IReadOnlyList<ParentChoice> GetParentChoices(string child)
         => _parentsByChild.TryGetValue(child.Trim(), out var parents)
             ? parents.OrderBy(x => x.Parent1, StringComparer.CurrentCultureIgnoreCase).ThenBy(x => x.Parent2, StringComparer.CurrentCultureIgnoreCase).ToList()
