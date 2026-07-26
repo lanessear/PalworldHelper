@@ -12,6 +12,8 @@ dotnet run --project src/PalworldHelper
 .\build-windows.ps1
 ```
 
+The package output is written to `publish\`. Locally, keep build artifacts outside the repository checkout when possible.
+
 ## Application data
 
 Profiles and local settings are stored beneath the current Windows user's application-data directory.

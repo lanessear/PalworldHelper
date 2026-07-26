@@ -1,7 +1,7 @@
 <Window x:Class="PalworldHelper.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PalworldHelper Quickstart" Height="860" Width="1100" MinHeight="720" MinWidth="920" WindowStartupLocation="CenterScreen"
+        Title="PalworldHelper" Height="860" Width="1100" MinHeight="720" MinWidth="920" WindowStartupLocation="CenterScreen"
         Loaded="MainWindow_Loaded">
   <Grid Margin="22">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -12,7 +12,7 @@
         <TextBlock Text="This is not presented as a human-developed software project." Foreground="#FEE2E2" FontSize="14" FontWeight="SemiBold" FontStyle="Italic" TextAlignment="Center" Margin="0,4,0,0"/>
       </StackPanel>
     </Border>
-    <StackPanel Grid.Row="1" Margin="0,0,0,16"><TextBlock Text="PalworldHelper" FontSize="34" FontWeight="Bold"/><TextBlock Text="Native Windows quickstart with server profiles, parsed save data, and breeding chains." Foreground="{StaticResource Muted}" Margin="0,4,0,0"/></StackPanel>
+    <StackPanel Grid.Row="1" Margin="0,0,0,16"><TextBlock Text="PalworldHelper" FontSize="34" FontWeight="Bold"/><TextBlock Text="Native Windows helper with server profiles, parsed save data, and breeding chains." Foreground="{StaticResource Muted}" Margin="0,4,0,0"/></StackPanel>
     <TabControl Grid.Row="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}">
       <TabItem Header="Server"><ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="20"><Grid.ColumnDefinitions><ColumnDefinition Width="280"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0"><TextBlock Text="Server Profiles" FontSize="20" FontWeight="SemiBold"/><ListBox x:Name="ProfilesList" Height="360" Margin="0,12,0,8" SelectionChanged="ProfilesList_SelectionChanged" DisplayMemberPath="Name"/><WrapPanel><Button Content="New" Click="NewProfile_Click"/><Button Content="Delete" Click="DeleteProfile_Click" Background="#FF8796"/></WrapPanel></StackPanel>
@@ -36,6 +36,6 @@
       </Grid></TabItem>
       <TabItem Header="Maintenance"><StackPanel Margin="20"><TextBlock Text="Updates and removal" FontSize="20" FontWeight="SemiBold"/><TextBlock Margin="0,8,0,14" TextWrapping="Wrap" Foreground="{StaticResource Muted}" Text="Updates are downloaded from the latest GitHub release. Files no longer used by the new version are moved to a dated archive under %LOCALAPPDATA%\PalworldHelper\obsolete instead of being deleted immediately."/><WrapPanel><Button Content="Check for updates" Click="CheckForUpdates_Click"/><Button Content="Uninstall PalworldHelper" Margin="10,0,0,0" Background="#FF8796" Click="Uninstall_Click"/></WrapPanel><TextBlock x:Name="MaintenanceStatus" Margin="0,14,0,0" TextWrapping="Wrap" Foreground="{StaticResource Muted}"/></StackPanel></TabItem>
     </TabControl>
-    <DockPanel Grid.Row="3" Margin="0,12,0,0"><TextBlock DockPanel.Dock="Left" Foreground="{StaticResource Muted}" Text="Quickstart v0.6 · Settings are stored under %LOCALAPPDATA%\PalworldHelper"/><TextBlock DockPanel.Dock="Right" Foreground="{StaticResource Muted}" Text="One application EXE; data and libraries remain replaceable."/></DockPanel>
+    <DockPanel Grid.Row="3" Margin="0,12,0,0"><TextBlock DockPanel.Dock="Left" Foreground="{StaticResource Muted}" Text="PalworldHelper v0.6 · Settings are stored under %LOCALAPPDATA%\PalworldHelper"/><TextBlock DockPanel.Dock="Right" Foreground="{StaticResource Muted}" Text="Portable app folder; data and parser helper remain replaceable."/></DockPanel>
   </Grid>
 </Window>

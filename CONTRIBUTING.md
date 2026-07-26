@@ -30,6 +30,12 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
+For the packaged Windows folder, run:
+
+```powershell
+.\build-windows.ps1
+```
+
 ## Pull requests
 
 Explain what changed, why it changed, how it was tested, and whether data migrations or compatibility concerns exist.
