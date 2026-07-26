@@ -775,7 +775,8 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 string.IsNullOrWhiteSpace(pal.Storage) ? "World / base" : pal.Storage,
                 pal.Level,
                 pal.Gender,
-                pal.PassiveSkills.Count == 0 ? "—" : string.Join(", ", pal.PassiveSkills)))
+                pal.PassiveSkills.Count == 0 ? "—" : string.Join(", ", pal.PassiveSkills),
+                pal.OwnerPlayerUids))
             .ToList();
 
         SavePlayersList.ItemsSource = _savePlayerRows;
@@ -811,14 +812,35 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private bool IsRelevantOwner(ParsedPal pal)
     {
         var owner = CurrentOwnerName();
-        return string.IsNullOrWhiteSpace(owner) || pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(owner)) return true;
+        if (pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase)) return true;
+
+        var ownerUid = CurrentOwnerUid();
+        return !string.IsNullOrWhiteSpace(ownerUid)
+            && pal.OwnerPlayerUids.Any(uid => NormalizeUid(uid).Equals(ownerUid, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsRelevantOwner(SavePalRow pal)
     {
         var owner = CurrentOwnerName();
-        return string.IsNullOrWhiteSpace(owner) || pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(owner)) return true;
+        if (pal.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase)) return true;
+
+        var ownerUid = CurrentOwnerUid();
+        return !string.IsNullOrWhiteSpace(ownerUid)
+            && pal.OwnerPlayerUids.Any(uid => NormalizeUid(uid).Equals(ownerUid, StringComparison.OrdinalIgnoreCase));
     }
+
+    private string? CurrentOwnerUid()
+    {
+        var owner = CurrentOwnerName();
+        if (string.IsNullOrWhiteSpace(owner)) return null;
+        var ownerUid = _savePlayerRows.FirstOrDefault(player => player.Name.Equals(owner, StringComparison.OrdinalIgnoreCase))?.PlayerUid;
+        return string.IsNullOrWhiteSpace(ownerUid) ? null : NormalizeUid(ownerUid);
+    }
+
+    private static string NormalizeUid(string value)
+        => value.Replace("-", string.Empty, StringComparison.Ordinal).Trim();
 
     private void SavePlayersList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
