@@ -42,7 +42,7 @@ def unwrap(value: Any) -> Any:
     while isinstance(value, dict):
         moved = False
         for key in ("value", "Value", "Str", "Name", "Enum", "Guid", "Bool", "Int", "Int64", "Float"):
-            if key in value and len(value) <= 4:
+            if key in value and len(value) <= 5:
                 value = value[key]
                 moved = True
                 break
@@ -105,6 +105,15 @@ def player_save_data(root: dict) -> dict:
         return root["properties"]["SaveData"]["value"]
     except (KeyError, TypeError):
         return {}
+
+
+def dimension_storage_entries(root: dict) -> list:
+    try:
+        value = root["properties"]["SaveParameterArray"]["value"]
+    except (KeyError, TypeError):
+        return []
+    values = value.get("values", []) if isinstance(value, dict) else []
+    return values if isinstance(values, list) else []
 
 
 def passive_skills(parameter: dict) -> list[str]:
@@ -216,7 +225,10 @@ def container_slots(world: dict) -> dict[str, dict[str, Any]]:
 def parse_character(entry: dict) -> dict:
     parameter = save_parameter(entry)
     key = entry.get("key", {}) if isinstance(entry, dict) else {}
+    return parse_character_parameter(parameter, key)
 
+
+def parse_character_parameter(parameter: dict, key: dict) -> dict:
     player_uid_raw = direct(key, "PlayerUId", "PlayerUID", default="")
     instance_id_raw = direct(key, "InstanceId", "InstanceID", default="")
     owner_uid_raw = direct(parameter, "OwnerPlayerUId", "OwnerPlayerUID", default="")
@@ -240,6 +252,52 @@ def parse_character(entry: dict) -> dict:
         "gender": str(gender or ""),
         "passiveSkills": passive_skills(parameter),
     }
+
+
+def parse_dimension_storage_file(path: Path) -> tuple[str, list[dict]] | None:
+    try:
+        with path.open("rb") as file:
+            raw, _ = decompress_sav_to_gvas(file.read())
+        decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES, allow_nan=False).dump()
+    except Exception:
+        return None
+
+    player_uid = path.stem.lower().removesuffix("_dps").replace("-", "")
+    pals: list[dict] = []
+    for slot_index, entry in enumerate(dimension_storage_entries(decoded)):
+        if not isinstance(entry, dict):
+            continue
+        parameter = direct(entry, "SaveParameter", default={})
+        instance_key = direct(entry, "InstanceId", default={})
+        if not isinstance(parameter, dict) or not isinstance(instance_key, dict):
+            continue
+        character = parse_character_parameter(parameter, instance_key)
+        if not character["species"] or normalize_id(character["instanceId"]) == "00000000000000000000000000000000":
+            continue
+        character["ownerPlayerUid"] = player_uid
+        character["ownerPlayerUidNormalized"] = player_uid
+        character["storage"] = "Dimensional Pal Storage"
+        character["containerId"] = path.name
+        character["slotIndex"] = slot_index
+        pals.append(character)
+    return (player_uid, pals) if pals else None
+
+
+def dimension_storage_pals(players_dir: str | None) -> dict[str, list[dict]]:
+    if not players_dir:
+        return {}
+    directory = Path(players_dir)
+    if not directory.is_dir():
+        return {}
+
+    result: dict[str, list[dict]] = {}
+    for path in directory.glob("*_dps.sav"):
+        parsed = parse_dimension_storage_file(path)
+        if parsed is None:
+            continue
+        uid, pals = parsed
+        result.setdefault(uid, []).extend(pals)
+    return result
 
 
 def main() -> None:
@@ -268,6 +326,7 @@ def main() -> None:
     characters = [parse_character(entry) for entry in map_entries(world, "CharacterSaveParameterMap")]
     guild_names = guild_player_names(world)
     player_containers = player_container_ids(args.players_dir)
+    player_dimension_pals = dimension_storage_pals(args.players_dir)
     slots_by_instance = container_slots(world)
 
     # Use one record per player UID. Guild data is authoritative; the character nickname is only a fallback.
@@ -297,7 +356,7 @@ def main() -> None:
             }
 
     pals = []
-    for character in characters:
+    for character in characters + [pal for storage_pals in player_dimension_pals.values() for pal in storage_pals]:
         if character["isPlayer"]:
             continue
         owner_uid = character["ownerPlayerUidNormalized"]
@@ -310,6 +369,7 @@ def main() -> None:
             owner_name = container_owner["ownerName"]
             owner_uid = container_owner["ownerUid"]
         species = character_names.get(character["species"], character["species"])
+        storage = character.get("storage") or (container_owner["containerType"] if container_owner else ("Container" if slot else "World / base"))
         pals.append({
             "owner": owner_name or character["ownerPlayerUid"] or "World / base",
             "ownerPlayerUid": character["ownerPlayerUid"] or owner_uid,
@@ -320,9 +380,9 @@ def main() -> None:
             "gender": character["gender"],
             "passiveSkills": [passive_skill_names.get(skill, skill) for skill in character["passiveSkills"]],
             "instanceId": character["instanceId"],
-            "storage": container_owner["containerType"] if container_owner else ("Container" if slot else "World / base"),
-            "containerId": slot.get("containerId", ""),
-            "slotIndex": slot.get("slotIndex", 0),
+            "storage": storage,
+            "containerId": character.get("containerId") or slot.get("containerId", ""),
+            "slotIndex": character.get("slotIndex") or slot.get("slotIndex", 0),
         })
 
     result = {
