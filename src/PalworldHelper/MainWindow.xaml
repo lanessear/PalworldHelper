@@ -524,6 +524,8 @@
                          Text="Updates are downloaded from the latest GitHub release. Files no longer used by the new version are moved to a dated archive under %LOCALAPPDATA%\PalworldHelper\obsolete instead of being deleted immediately."/>
               <WrapPanel>
                 <Button Content="Check for updates" Click="CheckForUpdates_Click"/>
+                <Button Content="Create debug summary"
+                        Click="CreateDebugSummary_Click"/>
                 <Button Content="Uninstall PalworldHelper"
                         Margin="10,8,8,0"
                         Background="#FF8796"
