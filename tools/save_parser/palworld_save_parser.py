@@ -73,6 +73,13 @@ def display_uid(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def normalize_id(value: Any) -> str:
+    value = unwrap(value)
+    if value is None:
+        return ""
+    return str(value).replace("-", "").lower()
+
+
 def world_save_data(root: dict) -> dict:
     try:
         return root["properties"]["worldSaveData"]["value"]
@@ -89,6 +96,13 @@ def map_entries(world: dict, name: str) -> list:
 def save_parameter(entry: dict) -> dict:
     try:
         return entry["value"]["RawData"]["value"]["object"]["SaveParameter"]["value"]
+    except (KeyError, TypeError):
+        return {}
+
+
+def player_save_data(root: dict) -> dict:
+    try:
+        return root["properties"]["SaveData"]["value"]
     except (KeyError, TypeError):
         return {}
 
@@ -135,6 +149,70 @@ def guild_player_names(world: dict) -> dict[str, str]:
     return names
 
 
+def parse_player_container_file(path: Path) -> tuple[str, dict[str, str]] | None:
+    try:
+        with path.open("rb") as file:
+            raw, _ = decompress_sav_to_gvas(file.read())
+        decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, PALWORLD_CUSTOM_PROPERTIES, allow_nan=False).dump()
+        save_data = player_save_data(decoded)
+    except Exception:
+        return None
+
+    stem = path.stem.lower()
+    player_uid = stem.removesuffix("_dps").replace("-", "")
+    palbox_id = direct(save_data, "PalStorageContainerId", default={})
+    party_id = direct(save_data, "OtomoCharacterContainerId", default={})
+    result = {
+        "palbox": normalize_id(palbox_id.get("ID") if isinstance(palbox_id, dict) else palbox_id),
+        "party": normalize_id(party_id.get("ID") if isinstance(party_id, dict) else party_id),
+    }
+    result = {key: value for key, value in result.items() if value}
+    return (player_uid, result) if result else None
+
+
+def player_container_ids(players_dir: str | None) -> dict[str, dict[str, str]]:
+    if not players_dir:
+        return {}
+    directory = Path(players_dir)
+    if not directory.is_dir():
+        return {}
+
+    result: dict[str, dict[str, str]] = {}
+    for path in directory.glob("*.sav"):
+        parsed = parse_player_container_file(path)
+        if parsed is None:
+            continue
+        uid, containers = parsed
+        result.setdefault(uid, {}).update(containers)
+    return result
+
+
+def container_slots(world: dict) -> dict[str, dict[str, Any]]:
+    slots_by_instance: dict[str, dict[str, Any]] = {}
+    for container in map_entries(world, "CharacterContainerSaveData"):
+        container_id = normalize_id(direct(container.get("key", {}), "ID", default=""))
+        slot_values = direct(container.get("value", {}), "Slots", default={})
+        if isinstance(slot_values, dict):
+            slot_values = slot_values.get("values", [])
+        if not container_id or not isinstance(slot_values, list):
+            continue
+
+        for slot in slot_values:
+            raw = direct(slot, "RawData", default={})
+            if not isinstance(raw, dict):
+                continue
+            instance_id = normalize_id(raw.get("instance_id"))
+            if not instance_id or instance_id == "00000000000000000000000000000000":
+                continue
+            slots_by_instance[instance_id] = {
+                "containerId": container_id,
+                "slotIndex": direct(slot, "SlotIndex", default=0),
+                "playerUid": display_uid(raw.get("player_uid")),
+                "playerUidNormalized": normalize_uid(raw.get("player_uid")),
+            }
+    return slots_by_instance
+
+
 def parse_character(entry: dict) -> dict:
     parameter = save_parameter(entry)
     key = entry.get("key", {}) if isinstance(entry, dict) else {}
@@ -168,6 +246,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("save")
     parser.add_argument("output")
+    parser.add_argument("--players-dir", default="")
     args = parser.parse_args()
 
     if not os.path.isfile(args.save):
@@ -179,7 +258,7 @@ def main() -> None:
     wanted = {
         key: value
         for key, value in PALWORLD_CUSTOM_PROPERTIES.items()
-        if "CharacterSaveParameterMap" in key or "GroupSaveDataMap" in key
+        if "CharacterSaveParameterMap" in key or "GroupSaveDataMap" in key or "CharacterContainerSaveData" in key
     }
     decoded = GvasFile.read(raw, PALWORLD_TYPE_HINTS, wanted, allow_nan=False).dump()
     world = world_save_data(decoded)
@@ -188,6 +267,8 @@ def main() -> None:
 
     characters = [parse_character(entry) for entry in map_entries(world, "CharacterSaveParameterMap")]
     guild_names = guild_player_names(world)
+    player_containers = player_container_ids(args.players_dir)
+    slots_by_instance = container_slots(world)
 
     # Use one record per player UID. Guild data is authoritative; the character nickname is only a fallback.
     player_by_uid: dict[str, dict] = {}
@@ -205,6 +286,16 @@ def main() -> None:
         }
 
     players = list(player_by_uid.values())
+    container_to_owner: dict[str, dict[str, str]] = {}
+    for uid, containers in player_containers.items():
+        owner_name = guild_names.get(uid) or player_by_uid.get(uid, {}).get("name") or uid
+        for container_type, container_id in containers.items():
+            container_to_owner[container_id] = {
+                "ownerName": owner_name,
+                "ownerUid": uid,
+                "containerType": "Dimensional Pal Storage" if container_type == "palbox" else "Party",
+            }
+
     pals = []
     for character in characters:
         if character["isPlayer"]:
@@ -213,10 +304,15 @@ def main() -> None:
         owner_name = guild_names.get(owner_uid)
         if not owner_name and owner_uid in player_by_uid:
             owner_name = player_by_uid[owner_uid]["name"]
+        slot = slots_by_instance.get(normalize_id(character["instanceId"]), {})
+        container_owner = container_to_owner.get(slot.get("containerId", ""))
+        if container_owner:
+            owner_name = container_owner["ownerName"]
+            owner_uid = container_owner["ownerUid"]
         species = character_names.get(character["species"], character["species"])
         pals.append({
             "owner": owner_name or character["ownerPlayerUid"] or "World / base",
-            "ownerPlayerUid": character["ownerPlayerUid"],
+            "ownerPlayerUid": character["ownerPlayerUid"] or owner_uid,
             "species": species,
             "characterId": character["species"],
             "nickname": character["name"],
@@ -224,6 +320,9 @@ def main() -> None:
             "gender": character["gender"],
             "passiveSkills": [passive_skill_names.get(skill, skill) for skill in character["passiveSkills"]],
             "instanceId": character["instanceId"],
+            "storage": container_owner["containerType"] if container_owner else ("Container" if slot else "World / base"),
+            "containerId": slot.get("containerId", ""),
+            "slotIndex": slot.get("slotIndex", 0),
         })
 
     result = {

@@ -770,6 +770,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 pal.Species,
                 pal.Nickname,
                 pal.Owner,
+                string.IsNullOrWhiteSpace(pal.Storage) ? "World / base" : pal.Storage,
                 pal.Level,
                 pal.Gender,
                 pal.PassiveSkills.Count == 0 ? "—" : string.Join(", ", pal.PassiveSkills)))

@@ -114,9 +114,53 @@ public sealed class SftpService
 
         using var output = File.Create(target);
         client.DownloadFile(remotePath, output);
+        DownloadPlayersDirectoryIfAvailable(client, remotePath, targetDir);
         client.Disconnect();
         return target;
     }
+
+    private static void DownloadPlayersDirectoryIfAvailable(SftpClient client, string remoteLevelPath, string targetDir)
+    {
+        var remoteDirectory = RemoteDirectoryName(remoteLevelPath);
+        if (string.IsNullOrWhiteSpace(remoteDirectory)) return;
+
+        var remotePlayersDirectory = CombineRemotePath(remoteDirectory, "Players");
+        try
+        {
+            if (!client.Exists(remotePlayersDirectory) || !client.GetAttributes(remotePlayersDirectory).IsDirectory)
+            {
+                return;
+            }
+
+            var targetPlayersDirectory = Path.Combine(targetDir, "Players");
+            Directory.CreateDirectory(targetPlayersDirectory);
+
+            foreach (var entry in client.ListDirectory(remotePlayersDirectory))
+            {
+                if (!entry.IsRegularFile || !entry.Name.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                using var output = File.Create(Path.Combine(targetPlayersDirectory, entry.Name));
+                client.DownloadFile(entry.FullName, output);
+            }
+        }
+        catch (SshException)
+        {
+            // Some server users can read Level.sav but not the Players directory.
+            // Level.sav remains useful, but player-owned storage may be incomplete.
+        }
+    }
+
+    private static string RemoteDirectoryName(string remotePath)
+    {
+        var index = remotePath.LastIndexOf('/');
+        return index <= 0 ? "" : remotePath[..index];
+    }
+
+    private static string CombineRemotePath(string directory, string name)
+        => directory.EndsWith('/') ? directory + name : directory + "/" + name;
 
     private static SftpClient CreateClient(ServerProfile p, string password, TimeSpan timeout)
     {
