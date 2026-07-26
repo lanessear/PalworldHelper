@@ -1072,7 +1072,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             : $"Showing Pals assigned to {owner}.";
     }
 
-    private void UpdateSaveStatCards(IReadOnlyCollection<SavePalRow> rows, string? owner)
+    private void UpdateSaveStatCards(List<SavePalRow> rows, string? owner)
     {
         var ownerCount = string.IsNullOrWhiteSpace(owner)
             ? _savePlayerRows.Count
