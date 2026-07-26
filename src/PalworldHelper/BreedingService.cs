@@ -143,9 +143,11 @@ public sealed class BreedingService
         if (string.IsNullOrWhiteSpace(target)) return null;
 
         var unrestricted = availableSpecies is null || availableSpecies.Count == 0;
-        var startingSpecies = unrestricted ? Names : Names.Where(species => availableSpecies?.Contains(species) == true).ToList();
-        if (startingSpecies.Any(name => name.Equals(target, StringComparison.OrdinalIgnoreCase)))
-            return [];
+        var startingSpecies = unrestricted
+            ? Names.Where(species => !species.Equals(target, StringComparison.OrdinalIgnoreCase)).ToList()
+            : Names.Where(species => !species.Equals(target, StringComparison.OrdinalIgnoreCase) && availableSpecies!.Contains(species)).ToList();
+        if (startingSpecies.Count == 0)
+            return null;
 
         var queue = new Queue<string>();
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
