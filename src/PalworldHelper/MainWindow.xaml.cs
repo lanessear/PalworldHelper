@@ -457,7 +457,19 @@ The compact format may use "names" instead of "pals". Every result must contain 
         output.AppendLine();
 
         var ownerChoices = HasParsedSave
-            ? choices.Where(choice => GetBestOwnedPal(choice.Parent1, desiredPassives) is not null && GetBestOwnedPal(choice.Parent2, desiredPassives) is not null).ToList()
+            ? choices
+                .Select(choice => new
+                {
+                    Choice = choice,
+                    Parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives),
+                    Parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives)
+                })
+                .Where(choice => choice.Parent1 is not null && choice.Parent2 is not null)
+                .OrderByDescending(choice => PassiveMatchCount(choice.Parent1!, desiredPassives) + PassiveMatchCount(choice.Parent2!, desiredPassives))
+                .ThenBy(choice => UnwantedPassiveCount(choice.Parent1!, desiredPassives) + UnwantedPassiveCount(choice.Parent2!, desiredPassives))
+                .ThenByDescending(choice => choice.Parent1!.Level + choice.Parent2!.Level)
+                .Select(choice => choice.Choice)
+                .ToList()
             : choices.ToList();
 
         if (ownerChoices.Count == 0)
@@ -485,8 +497,9 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return _parsedSave!.Pals
             .Where(IsRelevantOwner)
             .Where(pal => pal.Species.Equals(species, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(pal => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)))
-            .ThenByDescending(pal => pal.PassiveSkills.Count)
+            .OrderByDescending(pal => PassiveMatchCount(pal, desiredPassives))
+            .ThenBy(pal => UnwantedPassiveCount(pal, desiredPassives))
+            .ThenBy(pal => pal.PassiveSkills.Count)
             .ThenByDescending(pal => pal.Level)
             .FirstOrDefault();
     }
@@ -556,6 +569,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
             })
             .Where(candidate => candidate.CoveredSkills.Count > 0)
             .OrderByDescending(candidate => candidate.CoveredSkills.Count)
+            .ThenBy(candidate => UnwantedPassiveCount(candidate.Pal, desiredPassives))
             .ThenBy(candidate => candidate.Pal.Species.Equals(child, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
             .ThenBy(candidate => RouteLength(candidate.Pal.Species, child, available))
             .ThenByDescending(candidate => candidate.Pal.Level)
@@ -587,11 +601,20 @@ The compact format may use "names" instead of "pals". Every result must contain 
             return $"best {species}: no owned candidate in loaded save";
 
         var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
+        var unwanted = UnwantedPassiveCount(pal, desiredPassives);
         var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
-        var matchText = desiredPassives.Count == 0 ? "" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))}";
+        var matchText = desiredPassives.Count == 0 ? $" | clean passives: {pal.PassiveSkills.Count}" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))} | extra passives: {unwanted}";
         var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
         return $"best {species}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
     }
+
+    private static int PassiveMatchCount(ParsedPal pal, List<string> desiredPassives)
+        => desiredPassives.Count(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase));
+
+    private static int UnwantedPassiveCount(ParsedPal pal, List<string> desiredPassives)
+        => desiredPassives.Count == 0
+            ? pal.PassiveSkills.Count
+            : pal.PassiveSkills.Count(skill => !desiredPassives.Contains(skill, StringComparer.OrdinalIgnoreCase));
 
     private static string DisplayNickname(ParsedPal pal)
         => string.IsNullOrWhiteSpace(pal.Nickname) ? pal.Species : pal.Nickname;
