@@ -556,6 +556,33 @@
                         Background="#FF8796"
                         Click="Uninstall_Click"/>
               </WrapPanel>
+              <Border Background="{StaticResource Panel2}"
+                      CornerRadius="8"
+                      Padding="12"
+                      Margin="0,16,0,0">
+                <StackPanel>
+                  <TextBlock Text="Obsolete update archive"
+                             FontSize="16"
+                             FontWeight="SemiBold"/>
+                  <TextBlock Text="Old files moved during updates are kept here temporarily so you can inspect or remove them later."
+                             TextWrapping="Wrap"
+                             Foreground="{StaticResource Muted}"
+                             Margin="0,6,0,10"/>
+                  <TextBlock x:Name="ObsoleteStatus"
+                             TextWrapping="Wrap"
+                             Foreground="{StaticResource Muted}"
+                             Margin="0,0,0,8"/>
+                  <WrapPanel>
+                    <Button Content="Open obsolete folder"
+                            Click="OpenObsoleteFolder_Click"/>
+                    <Button Content="Refresh"
+                            Click="RefreshObsolete_Click"/>
+                    <Button Content="Delete obsolete folder"
+                            Background="#FF8796"
+                            Click="DeleteObsolete_Click"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
               <TextBlock x:Name="MaintenanceStatus"
                          Margin="0,14,0,0"
                          TextWrapping="Wrap"

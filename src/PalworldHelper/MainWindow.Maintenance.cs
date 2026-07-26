@@ -12,6 +12,7 @@ public partial class MainWindow
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         BreedingJsonPath.TextChanged += (_, _) => UpdateBreedingDataBadge();
+        RefreshObsoleteSummary();
 
         if (!string.IsNullOrWhiteSpace(_settings.BreedingJsonPath) && !File.Exists(_settings.BreedingJsonPath))
         {
@@ -86,6 +87,84 @@ public partial class MainWindow
         {
             MaintenanceStatus.Text = "✗ Uninstall could not be started: " + ex.Message;
         }
+    }
+
+    private void OpenObsoleteFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ApplicationMaintenanceService.OpenObsoleteDirectory();
+            RefreshObsoleteSummary();
+            MaintenanceStatus.Text = "✓ Obsolete folder opened.";
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatus.Text = "✗ Obsolete folder could not be opened: " + ex.Message;
+        }
+    }
+
+    private void RefreshObsolete_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshObsoleteSummary();
+        MaintenanceStatus.Text = "✓ Obsolete folder status refreshed.";
+    }
+
+    private void DeleteObsolete_Click(object sender, RoutedEventArgs e)
+    {
+        var summary = ApplicationMaintenanceService.GetObsoleteSummary();
+        if (!summary.Exists || summary.FileCount == 0 && summary.DirectoryCount == 0)
+        {
+            RefreshObsoleteSummary();
+            MaintenanceStatus.Text = "No obsolete files to delete.";
+            return;
+        }
+
+        var answer = MessageBox.Show(
+            this,
+            "Delete the obsolete update archive?\n\n" +
+            "This only removes old files archived during updates. Current app files, saves, settings, and custom JSON files are not deleted.",
+            "Delete obsolete files",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (answer != MessageBoxResult.Yes) return;
+
+        try
+        {
+            ApplicationMaintenanceService.DeleteObsoleteDirectory();
+            RefreshObsoleteSummary();
+            MaintenanceStatus.Text = "✓ Obsolete folder deleted.";
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatus.Text = "✗ Obsolete folder could not be deleted: " + ex.Message;
+        }
+    }
+
+    private void RefreshObsoleteSummary()
+    {
+        var summary = ApplicationMaintenanceService.GetObsoleteSummary();
+        ObsoleteStatus.Text = summary.Exists
+            ? string.Create(
+                CultureInfo.CurrentCulture,
+                $"Folder: {ApplicationMaintenanceService.ObsoleteDirectory}\nContains {summary.FileCount:N0} files in {summary.DirectoryCount:N0} folders ({FormatBytes(summary.Bytes)}).")
+            : string.Create(
+                CultureInfo.CurrentCulture,
+                $"Folder: {ApplicationMaintenanceService.ObsoleteDirectory}\nNo obsolete folder exists yet.");
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        var size = (double)bytes;
+        var unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return string.Create(CultureInfo.CurrentCulture, $"{size:N1} {units[unit]}");
     }
 
     private void CreateDebugSummary_Click(object sender, RoutedEventArgs e)
