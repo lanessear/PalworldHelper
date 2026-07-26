@@ -25,7 +25,7 @@ public partial class MainWindow : Window
     private ParsedSave? _parsedSave;
 
     private sealed record LocalSaveCandidate(string SavePath, bool HasPlayersFolder, DateTime LastWriteTimeUtc);
-    private sealed record ParentPairCandidate(ParsedPal Parent1, ParsedPal Parent2, int GenderConversions);
+    private sealed record ParentPairCandidate(ParsedPal Parent1, ParsedPal Parent2, int GenderConversions, double PassiveChance);
 
     public MainWindow()
     {
@@ -716,6 +716,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 })
                 .Where(choice => choice.Pair is not null)
                 .OrderBy(choice => choice.Pair!.GenderConversions)
+                .ThenByDescending(choice => choice.Pair!.PassiveChance)
                 .ThenByDescending(choice => PassiveMatchCount(choice.Pair!.Parent1, desiredPassives) + PassiveMatchCount(choice.Pair!.Parent2, desiredPassives))
                 .ThenBy(choice => UnwantedPassiveCount(choice.Pair!.Parent1, desiredPassives) + UnwantedPassiveCount(choice.Pair!.Parent2, desiredPassives))
                 .ThenByDescending(choice => choice.Pair!.Parent1.Level + choice.Pair!.Parent2.Level)
@@ -739,6 +740,10 @@ The compact format may use "names" instead of "pals". Every result must contain 
             if (pair is not null)
             {
                 output.AppendLine(CultureInfo.InvariantCulture, $"Gender changes needed: {pair.GenderConversions}/{genderBudget}");
+                if (desiredPassives.Count > 0)
+                {
+                    output.AppendLine(CultureInfo.InvariantCulture, $"Estimated passive result chance: {pair.PassiveChance:P1} per egg");
+                }
             }
             output.AppendLine(DescribeParentCandidate(choice.Parent1, parent1, desiredPassives));
             output.AppendLine(DescribeParentCandidate(choice.Parent2, parent2, desiredPassives));
@@ -774,11 +779,12 @@ The compact format may use "names" instead of "pals". Every result must contain 
             }))
             .Where(pair => pair.Conversions <= genderBudget)
             .OrderBy(pair => pair.Conversions)
+            .ThenByDescending(pair => PassiveResultChance(pair.First, pair.Second, desiredPassives))
             .ThenByDescending(pair => PassiveMatchCount(pair.First, desiredPassives) + PassiveMatchCount(pair.Second, desiredPassives))
             .ThenBy(pair => UnwantedPassiveCount(pair.First, desiredPassives) + UnwantedPassiveCount(pair.Second, desiredPassives))
             .ThenBy(pair => pair.First.PassiveSkills.Count + pair.Second.PassiveSkills.Count)
             .ThenByDescending(pair => pair.First.Level + pair.Second.Level)
-            .Select(pair => new ParentPairCandidate(pair.First, pair.Second, pair.Conversions))
+            .Select(pair => new ParentPairCandidate(pair.First, pair.Second, pair.Conversions, PassiveResultChance(pair.First, pair.Second, desiredPassives)))
             .FirstOrDefault();
     }
 
@@ -932,6 +938,48 @@ The compact format may use "names" instead of "pals". Every result must contain 
         => desiredPassives.Count == 0
             ? pal.PassiveSkills.Count
             : pal.PassiveSkills.Count(skill => !desiredPassives.Contains(skill, StringComparer.OrdinalIgnoreCase));
+
+    private static double PassiveResultChance(ParsedPal first, ParsedPal second, List<string> desiredPassives)
+    {
+        if (desiredPassives.Count == 0) return 1;
+
+        var passivePool = first.PassiveSkills
+            .Concat(second.PassiveSkills)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (desiredPassives.Any(skill => !passivePool.Contains(skill, StringComparer.OrdinalIgnoreCase)))
+        {
+            return 0;
+        }
+
+        var desiredCount = desiredPassives.Count;
+        var unwantedCount = passivePool.Count(skill => !desiredPassives.Contains(skill, StringComparer.OrdinalIgnoreCase));
+        if (desiredCount > 4 || passivePool.Count == 0) return 0;
+
+        return desiredCount switch
+        {
+            4 => unwantedCount == 0 ? 0.10 : 0.10 / Combination(passivePool.Count, 4),
+            3 => unwantedCount == 0 ? 0.12 : 0.08 / Combination(passivePool.Count, 3),
+            2 => unwantedCount == 0 ? 0.24 : 0.12 / Combination(passivePool.Count, 2),
+            1 => unwantedCount == 0 ? 0.40 : 0.16 / Combination(passivePool.Count, 1),
+            _ => 0
+        };
+    }
+
+    private static double Combination(int total, int choose)
+    {
+        if (choose < 0 || choose > total) return double.PositiveInfinity;
+        if (choose == 0 || choose == total) return 1;
+        choose = Math.Min(choose, total - choose);
+        double result = 1;
+        for (var i = 1; i <= choose; i++)
+        {
+            result = result * (total - choose + i) / i;
+        }
+
+        return result;
+    }
 
     private static string DisplayNickname(ParsedPal pal)
         => string.IsNullOrWhiteSpace(pal.Nickname) ? pal.Species : pal.Nickname;
