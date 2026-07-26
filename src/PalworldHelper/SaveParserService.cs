@@ -99,7 +99,7 @@ public static class SaveParserService
         }
     }
 
-    private static string? FindPlayersDirectory(string savePath)
+    public static string? FindPlayersDirectory(string savePath)
     {
         var levelDirectory = Path.GetDirectoryName(savePath);
         if (string.IsNullOrWhiteSpace(levelDirectory)) return null;
