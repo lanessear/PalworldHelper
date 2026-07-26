@@ -28,5 +28,9 @@
              Link="palworld_passive_skills.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../tools/save_parser/palworld_character_names.json"
+             Link="palworld_character_names.json"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

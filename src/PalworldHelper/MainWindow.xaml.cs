@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService = new();
     private readonly BreedingService _breeding = new();
+    private readonly PalNameCatalog _palNames = PalNameCatalog.Load();
     private readonly List<PassiveSkillOption> _passiveSkillOptions = PassiveSkillCatalog.Load().ToList();
     private readonly List<string> _selectedPassiveSkills = [];
     private List<SavePalRow> _savePalRows = [];
@@ -310,8 +311,12 @@ The compact format may use "names" instead of "pals". Every result must contain 
             _breeding.Load(path);
             BreedingJsonPath.Text = path;
             BreedingStatus.Text = $"✓ Loaded {_breeding.ResultCount:N0} results and {_breeding.Names.Count:N0} Pal names.";
-            StartPal.ItemsSource = _breeding.Names;
-            TargetPal.ItemsSource = _breeding.Names;
+            var palOptions = _breeding.Names
+                .Select(name => new PalNameOption(name, PalDisplayName(name)))
+                .OrderBy(option => option.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            StartPal.ItemsSource = palOptions;
+            TargetPal.ItemsSource = palOptions;
             _settings.BreedingJsonPath = path;
             _settingsService.Save(_settings);
             UpdateBreedingAvailabilityStatus();
@@ -326,11 +331,11 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         ResultList.Items.Clear();
         ParentDetails.Text = string.Empty;
-        var start = StartPal.Text?.Trim() ?? "";
-        var target = TargetPal.Text?.Trim() ?? "";
+        var start = SelectedPalName(StartPal);
+        var target = SelectedPalName(TargetPal);
         if (string.IsNullOrWhiteSpace(target))
         {
-            ResultList.Items.Add("Select a desired child Pal.");
+            ResultList.Items.Add(new BreedingResultItem("Select a desired child Pal.", string.Empty));
             return;
         }
 
@@ -346,16 +351,16 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         if (path is null)
         {
-            ResultList.Items.Add(HasParsedSave
+            ResultList.Items.Add(new BreedingResultItem(HasParsedSave
                 ? "No breeding chain was found using the Pals available in the loaded save."
-                : "No breeding chain was found.");
+                : "No breeding chain was found.", string.Empty));
             return;
         }
         if (path.Count == 0)
         {
-            ResultList.Items.Add(HasParsedSave
+            ResultList.Items.Add(new BreedingResultItem(HasParsedSave
                 ? "You already have this Pal in the loaded save."
-                : "This Pal is available directly because no save restriction is active.");
+                : "This Pal is available directly because no save restriction is active.", target));
             ShowParentChoices(target);
             return;
         }
@@ -363,7 +368,9 @@ The compact format may use "names" instead of "pals". Every result must contain 
         {
             var parentMarker = path[i].ParentOwned ? "owned" : "bred";
             var mateMarker = path[i].MateOwned ? "owned" : "bred";
-            ResultList.Items.Add($"{i + 1}.  {path[i].Parent} ({parentMarker}) + {path[i].Mate} ({mateMarker})  →  {path[i].Child}");
+            ResultList.Items.Add(new BreedingResultItem(
+                $"{i + 1}.  {PalDisplayName(path[i].Parent)} ({parentMarker}) + {PalDisplayName(path[i].Mate)} ({mateMarker})  →  {PalDisplayName(path[i].Child)}",
+                path[i].Child));
         }
         ShowParentChoices(path[^1].Child);
     }
@@ -436,8 +443,14 @@ The compact format may use "names" instead of "pals". Every result must contain 
     private void ResultList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var text = ResultList.SelectedItem?.ToString();
+        if (ResultList.SelectedItem is BreedingResultItem { Child.Length: > 0 } item)
+        {
+            ShowParentChoices(item.Child);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(text) || !text.Contains('→')) return;
-        ShowParentChoices(text.Split('→').Last().Trim());
+        ShowParentChoices(PalCanonicalName(text.Split('→').Last()));
     }
 
     private void ShowParentChoices(string child)
@@ -446,12 +459,12 @@ The compact format may use "names" instead of "pals". Every result must contain 
         var choices = _breeding.GetParentChoices(child);
         if (choices.Count == 0)
         {
-            ParentDetails.Text = $"No parent combinations found for {child}.";
+            ParentDetails.Text = $"No parent combinations found for {PalDisplayName(child)}.";
             return;
         }
 
         var output = new System.Text.StringBuilder();
-        output.AppendLine(CultureInfo.InvariantCulture, $"Target child: {child}");
+        output.AppendLine(CultureInfo.InvariantCulture, $"Target child: {PalDisplayName(child)}");
         output.AppendLine(HasParsedSave ? $"Loaded save is active: only Pals assigned to {CurrentOwnerName() ?? "the selected owner"} are ranked as available." : "No save is active: all species are treated as available.");
         output.AppendLine(desiredPassives.Count == 0 ? "Desired passives: none selected" : $"Desired passives: {string.Join(", ", desiredPassives)}");
         output.AppendLine();
@@ -482,7 +495,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
         {
             var parent1 = GetBestOwnedPal(choice.Parent1, desiredPassives);
             var parent2 = GetBestOwnedPal(choice.Parent2, desiredPassives);
-            output.AppendLine(CultureInfo.InvariantCulture, $"{choice.Parent1} + {choice.Parent2}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"{PalDisplayName(choice.Parent1)} + {PalDisplayName(choice.Parent2)}");
             output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent1, parent1, desiredPassives)}");
             output.AppendLine(CultureInfo.InvariantCulture, $"  {DescribeParentCandidate(choice.Parent2, parent2, desiredPassives)}");
             output.AppendLine();
@@ -508,16 +521,16 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         var ownerName = CurrentOwnerName() ?? "the selected owner";
         if (!HasParsedSave || desiredPassives.Count == 0)
-            return $"No parent combinations for {child} are fully assigned to {ownerName}.";
+            return $"No parent combinations for {PalDisplayName(child)} are fully assigned to {ownerName}.";
 
         var carriers = FindSkillCarrierPlans(child, desiredPassives);
         if (carriers.Count == 0)
-            return $"No parent combinations for {child} are fully assigned to {ownerName}, and no owned Pals with the desired passive skills were found.";
+            return $"No parent combinations for {PalDisplayName(child)} are fully assigned to {ownerName}, and no owned Pals with the desired passive skills were found.";
 
         var covered = carriers.SelectMany(plan => plan.CoveredSkills).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var missing = desiredPassives.Except(covered, StringComparer.OrdinalIgnoreCase).ToList();
         var output = new System.Text.StringBuilder();
-        output.AppendLine(CultureInfo.InvariantCulture, $"No parent combinations for {child} are fully assigned to {ownerName}.");
+        output.AppendLine(CultureInfo.InvariantCulture, $"No parent combinations for {PalDisplayName(child)} are fully assigned to {ownerName}.");
         output.AppendLine();
         output.AppendLine("Fallback: use owned passive carriers as the gene pool.");
         output.AppendLine("A child can inherit none, one, or two passives from its parents. Exact odds are not calculated here.");
@@ -526,22 +539,22 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
         foreach (var plan in carriers)
         {
-            output.AppendLine(CultureInfo.InvariantCulture, $"{plan.Carrier.Species} ({DisplayNickname(plan.Carrier)}) covers {string.Join(", ", plan.CoveredSkills)}");
+            output.AppendLine(CultureInfo.InvariantCulture, $"{PalDisplayName(plan.Carrier.Species)} ({DisplayNickname(plan.Carrier)}) covers {string.Join(", ", plan.CoveredSkills)}");
             output.AppendLine(CultureInfo.InvariantCulture, $"  Owner: {plan.Carrier.Owner} · Level {plan.Carrier.Level} · {plan.Carrier.Gender}");
             output.AppendLine(CultureInfo.InvariantCulture, $"  Passives: {(plan.Carrier.PassiveSkills.Count == 0 ? "none" : string.Join(", ", plan.Carrier.PassiveSkills))}");
             if (plan.Path is null)
             {
-                output.AppendLine(CultureInfo.InvariantCulture, $"  No breeding route from {plan.Carrier.Species} to {child} was found with the current owner pool.");
+                output.AppendLine(CultureInfo.InvariantCulture, $"  No breeding route from {PalDisplayName(plan.Carrier.Species)} to {PalDisplayName(child)} was found with the current owner pool.");
             }
             else if (plan.Path.Count == 0)
             {
-                output.AppendLine(CultureInfo.InvariantCulture, $"  Carrier already is {child}.");
+                output.AppendLine(CultureInfo.InvariantCulture, $"  Carrier already is {PalDisplayName(child)}.");
             }
             else
             {
-                output.AppendLine(CultureInfo.InvariantCulture, $"  Suggested route to {child}:");
+                output.AppendLine(CultureInfo.InvariantCulture, $"  Suggested route to {PalDisplayName(child)}:");
                 for (var i = 0; i < plan.Path.Count; i++)
-                    output.AppendLine(CultureInfo.InvariantCulture, $"    {i + 1}. {plan.Path[i].Parent} + {plan.Path[i].Mate} → {plan.Path[i].Child}");
+                    output.AppendLine(CultureInfo.InvariantCulture, $"    {i + 1}. {PalDisplayName(plan.Path[i].Parent)} + {PalDisplayName(plan.Path[i].Mate)} → {PalDisplayName(plan.Path[i].Child)}");
             }
             output.AppendLine();
         }
@@ -595,17 +608,17 @@ The compact format may use "names" instead of "pals". Every result must contain 
         return path?.Count ?? int.MaxValue;
     }
 
-    private static string DescribeParentCandidate(string species, ParsedPal? pal, List<string> desiredPassives)
+    private string DescribeParentCandidate(string species, ParsedPal? pal, List<string> desiredPassives)
     {
         if (pal is null)
-            return $"best {species}: no owned candidate in loaded save";
+            return $"best {PalDisplayName(species)}: no owned candidate in loaded save";
 
         var matched = desiredPassives.Where(skill => pal.PassiveSkills.Contains(skill, StringComparer.OrdinalIgnoreCase)).ToList();
         var unwanted = UnwantedPassiveCount(pal, desiredPassives);
         var passives = pal.PassiveSkills.Count == 0 ? "no passive skills" : string.Join(", ", pal.PassiveSkills);
         var matchText = desiredPassives.Count == 0 ? $" | clean passives: {pal.PassiveSkills.Count}" : $" | matches {matched.Count}/{desiredPassives.Count}: {(matched.Count == 0 ? "none" : string.Join(", ", matched))} | extra passives: {unwanted}";
         var nickname = string.IsNullOrWhiteSpace(pal.Nickname) ? "" : $" ({pal.Nickname})";
-        return $"best {species}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
+        return $"best {PalDisplayName(species)}: {pal.Owner}{nickname}, Level {pal.Level}, {pal.Gender}, {passives}{matchText}";
     }
 
     private static int PassiveMatchCount(ParsedPal pal, List<string> desiredPassives)
@@ -618,6 +631,15 @@ The compact format may use "names" instead of "pals". Every result must contain 
 
     private static string DisplayNickname(ParsedPal pal)
         => string.IsNullOrWhiteSpace(pal.Nickname) ? pal.Species : pal.Nickname;
+
+    private string PalDisplayName(string name) => _palNames.DisplayName(name);
+
+    private string PalCanonicalName(string name) => _palNames.CanonicalName(name, _breeding.Names);
+
+    private string SelectedPalName(ComboBox comboBox)
+        => comboBox.SelectedItem is PalNameOption option
+            ? option.Name
+            : PalCanonicalName(comboBox.Text ?? string.Empty);
 
     private void UpdateBreedingAvailabilityStatus()
     {
@@ -755,7 +777,9 @@ The compact format may use "names" instead of "pals". Every result must contain 
     {
         var text = ResultList.SelectedItem?.ToString();
         if (string.IsNullOrWhiteSpace(text)) return;
-        var child = text.Contains('→') ? text.Split('→').Last().Trim() : TargetPal.Text?.Trim();
+        var child = ResultList.SelectedItem is BreedingResultItem { Child.Length: > 0 } item
+            ? item.Child
+            : text.Contains('→') ? PalCanonicalName(text.Split('→').Last()) : SelectedPalName(TargetPal);
         if (!string.IsNullOrWhiteSpace(child)) ShowParentChoices(child);
     }
 

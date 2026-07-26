@@ -41,6 +41,16 @@ public sealed record BreedingPlanStep(string Parent, string Mate, string Child, 
 
 public sealed record ParentChoice(string Parent1, string Parent2);
 
+public sealed record PalNameOption(string Name, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}
+
+public sealed record BreedingResultItem(string Text, string Child)
+{
+    public override string ToString() => Text;
+}
+
 public sealed record PassiveSkillOption(string Id, string Name, int Rank, string Description)
 {
     public string DisplayName => string.IsNullOrWhiteSpace(Description)
