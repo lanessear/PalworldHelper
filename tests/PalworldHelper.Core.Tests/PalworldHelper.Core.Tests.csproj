@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <OutputPath>../../publish/bin/tests/</OutputPath>
+    <IntermediateOutputPath>../../publish/obj/tests/</IntermediateOutputPath>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
