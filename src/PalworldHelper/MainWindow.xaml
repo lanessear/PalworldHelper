@@ -28,23 +28,23 @@
                      TextWrapping="Wrap"
                      Margin="0,4,0,18"/>
 
-          <Border Background="#7F1D1D"
-                  BorderBrush="#FCA5A5"
+          <Border Background="{DynamicResource DangerSoft}"
+                  BorderBrush="{DynamicResource Danger}"
                   BorderThickness="1"
                   CornerRadius="12"
                   Padding="12"
                   Margin="0,0,0,16">
             <StackPanel>
               <TextBlock Text="AI-created project"
-                         Foreground="White"
+                         Foreground="{DynamicResource Danger}"
                          FontWeight="ExtraBold"/>
               <TextBlock Text="AI designs, writes, documents, tests, and maintains this project. The human owner reviews and approves the results."
-                         Foreground="#FEE2E2"
+                         Foreground="{DynamicResource Text}"
                          TextWrapping="Wrap"
                          FontSize="12"
                          Margin="0,5,0,0"/>
               <TextBlock Text="Not presented as human-developed software."
-                         Foreground="#FEE2E2"
+                         Foreground="{DynamicResource Muted}"
                          FontStyle="Italic"
                          FontSize="12"
                          Margin="0,5,0,0"/>
@@ -347,7 +347,7 @@
                 <DockPanel>
                   <Border x:Name="BreedingDataKindBadge"
                           DockPanel.Dock="Left"
-                          Background="#2563EB"
+                          Background="{DynamicResource Primary}"
                           CornerRadius="6"
                           Padding="8,3"
                           Margin="0,0,8,0">

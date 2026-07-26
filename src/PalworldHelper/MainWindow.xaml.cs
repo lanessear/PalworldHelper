@@ -253,23 +253,24 @@ public partial class MainWindow : Window
     {
         var dark = theme.Equals("Dark", StringComparison.OrdinalIgnoreCase);
         _settings.Theme = dark ? "Dark" : "Light";
-        SetBrush("Bg", dark ? "#0B1120" : "#EEF2F7");
-        SetBrush("Panel", dark ? "#111827" : "#FBFCFE");
-        SetBrush("Panel2", dark ? "#1F2937" : "#E7ECF3");
+        SetBrush("Bg", dark ? "#0B1020" : "#F6F7FB");
+        SetBrush("Panel", dark ? "#121A2A" : "#FFFFFF");
+        SetBrush("Panel2", dark ? "#1B2638" : "#F1F4F9");
         SetBrush("Input", dark ? "#0F172A" : "#FFFFFF");
-        SetBrush("Text", dark ? "#E5E7EB" : "#172033");
-        SetBrush("Muted", dark ? "#9CA3AF" : "#61708A");
-        SetBrush("Accent", dark ? "#5EEAD4" : "#7DD3C7");
-        SetBrush("AccentSoft", dark ? "#134E4A" : "#DDF7F3");
-        SetBrush("Primary", dark ? "#60A5FA" : "#3B82F6");
-        SetBrush("PrimarySoft", dark ? "#1E3A8A" : "#DCEBFF");
-        SetBrush("Danger", dark ? "#F87171" : "#FCA5A5");
-        SetBrush("SuccessSoft", dark ? "#14532D" : "#DCFCE7");
-        SetBrush("WarningSoft", dark ? "#713F12" : "#FEF3C7");
-        SetBrush("Border", dark ? "#334155" : "#CBD5E1");
-        SetBrush("Sidebar", dark ? "#020617" : "#182235");
-        SetBrush("SidebarMuted", dark ? "#94A3B8" : "#BAC7D9");
-        SetBrush("SidebarPanel", dark ? "#111827" : "#26344D");
+        SetBrush("Text", dark ? "#E8EDF7" : "#172033");
+        SetBrush("Muted", dark ? "#AAB6C8" : "#64748B");
+        SetBrush("Accent", dark ? "#2DD4BF" : "#14B8A6");
+        SetBrush("AccentSoft", dark ? "#123D3A" : "#CCFBF1");
+        SetBrush("Primary", dark ? "#60A5FA" : "#2563EB");
+        SetBrush("PrimarySoft", dark ? "#1D3D6F" : "#E0ECFF");
+        SetBrush("Danger", dark ? "#FCA5A5" : "#EF4444");
+        SetBrush("DangerSoft", dark ? "#4C1D1D" : "#FEE2E2");
+        SetBrush("SuccessSoft", dark ? "#123D25" : "#DCFCE7");
+        SetBrush("WarningSoft", dark ? "#4A3412" : "#FEF3C7");
+        SetBrush("Border", dark ? "#2F3A4F" : "#D7DEE8");
+        SetBrush("Sidebar", dark ? "#070B15" : "#111827");
+        SetBrush("SidebarMuted", dark ? "#B8C4D8" : "#CBD5E1");
+        SetBrush("SidebarPanel", dark ? "#151D2C" : "#243044");
 
         if (ThemeToggleButton is not null)
         {
