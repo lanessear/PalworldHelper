@@ -6,6 +6,7 @@ public sealed class AppSettings
     public string? SelectedProfileId { get; set; }
     public string? BreedingJsonPath { get; set; }
     public string? LocalSavePath { get; set; }
+    public List<BreedingWishlistItem> BreedingWishlist { get; set; } = [];
 }
 
 public sealed class ServerProfile
@@ -49,6 +50,18 @@ public sealed record PalNameOption(string Name, string DisplayName)
 public sealed record BreedingResultItem(string Text, string Child)
 {
     public override string ToString() => Text;
+}
+
+public sealed class BreedingWishlistItem
+{
+    public string Child { get; set; } = "";
+    public List<string> PassiveSkills { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+public sealed record BreedingWishlistRow(string Child, string DisplayName, string PassiveSkills, string Summary)
+{
+    public override string ToString() => Summary;
 }
 
 public sealed record PassiveSkillOption(string Id, string Name, int Rank, string Description)
