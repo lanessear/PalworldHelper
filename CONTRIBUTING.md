@@ -39,3 +39,7 @@ For the packaged Windows folder, run:
 ## Pull requests
 
 Explain what changed, why it changed, how it was tested, and whether data migrations or compatibility concerns exist.
+
+## Releases
+
+Every GitHub release should include a human-written feature list. Mention features added since the previous release, removed features, important behavior changes, known follow-up work, and the package users should download.
