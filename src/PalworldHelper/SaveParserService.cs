@@ -78,8 +78,10 @@ public static class SaveParserService
                 process.StartInfo.ArgumentList.Add(playersDirectory);
             }
             process.Start();
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
             var stderrTask = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync().ConfigureAwait(false);
+            await stdoutTask.ConfigureAwait(false);
             var stderr = await stderrTask.ConfigureAwait(false);
             if (process.ExitCode != 0)
             {
