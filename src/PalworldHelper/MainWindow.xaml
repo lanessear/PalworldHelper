@@ -270,7 +270,7 @@
 
               <StackPanel>
                 <Label Content="Optional owned source Pal"/>
-                <ComboBox x:Name="StartPal" IsEditable="True" IsTextSearchEnabled="True"/>
+                <ComboBox x:Name="StartPal" IsEditable="True" IsTextSearchEnabled="True" DisplayMemberPath="DisplayName"/>
                 <TextBlock Text="Leave empty to search from any available Pal."
                            Foreground="{StaticResource Muted}"
                            FontSize="12"
@@ -279,7 +279,7 @@
 
               <StackPanel Grid.Column="1" Margin="14,0,0,0">
                 <Label Content="Desired child Pal"/>
-                <ComboBox x:Name="TargetPal" IsEditable="True" IsTextSearchEnabled="True"/>
+                <ComboBox x:Name="TargetPal" IsEditable="True" IsTextSearchEnabled="True" DisplayMemberPath="DisplayName"/>
                 <TextBlock Text="Pick the target first, then click a result for parent details."
                            Foreground="{StaticResource Muted}"
                            FontSize="12"
