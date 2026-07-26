@@ -4,7 +4,7 @@ All notable changes to PalworldHelper will be documented here.
 
 The project follows [Semantic Versioning](https://semver.org/) and the structure from [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.6.0] - 2026-07-26
 
 ### Added
 
