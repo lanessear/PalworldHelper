@@ -15,7 +15,7 @@
     </Grid.ColumnDefinitions>
 
     <Border Grid.Column="0"
-            Background="{StaticResource Sidebar}"
+            Background="{DynamicResource Sidebar}"
             Padding="20">
       <DockPanel LastChildFill="True">
         <StackPanel DockPanel.Dock="Top">
@@ -24,7 +24,7 @@
                      FontSize="26"
                      FontWeight="Bold"/>
           <TextBlock Text="Save-aware breeding planner"
-                     Foreground="{StaticResource SidebarMuted}"
+                     Foreground="{DynamicResource SidebarMuted}"
                      TextWrapping="Wrap"
                      Margin="0,4,0,18"/>
 
@@ -52,9 +52,13 @@
           </Border>
 
           <TextBlock Text="Navigation"
-                     Foreground="{StaticResource SidebarMuted}"
+                     Foreground="{DynamicResource SidebarMuted}"
                      FontWeight="SemiBold"
                      Margin="0,0,0,2"/>
+          <Button x:Name="ThemeToggleButton"
+                  Content="🌙 Dark mode"
+                  Style="{StaticResource NavButton}"
+                  Click="ToggleTheme_Click"/>
           <Button Content="💾 Save Data"
                   Style="{StaticResource NavButton}"
                   Click="GoToSaveData_Click"/>
@@ -70,7 +74,7 @@
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom">
-          <Border Background="{StaticResource SidebarPanel}"
+          <Border Background="{DynamicResource SidebarPanel}"
                   CornerRadius="12"
                   Padding="14"
                   Margin="0,18,0,0">
@@ -85,20 +89,20 @@
                          Margin="0,8,0,0"/>
               <TextBlock x:Name="DashboardCacheStatus"
                          Text="Select or auto-find Level.sav"
-                         Foreground="{StaticResource SidebarMuted}"
+                         Foreground="{DynamicResource SidebarMuted}"
                          TextWrapping="Wrap"
                          FontSize="12"
                          Margin="0,3,0,0"/>
               <Separator Margin="0,10,0,10"/>
               <TextBlock Text="Owner"
-                         Foreground="{StaticResource SidebarMuted}"
+                         Foreground="{DynamicResource SidebarMuted}"
                          FontSize="12"/>
               <TextBlock x:Name="DashboardOwnerStatus"
                          Text="All owners"
                          Foreground="White"
                          TextWrapping="Wrap"/>
               <TextBlock Text="Breeding data"
-                         Foreground="{StaticResource SidebarMuted}"
+                         Foreground="{DynamicResource SidebarMuted}"
                          FontSize="12"
                          Margin="0,8,0,0"/>
               <TextBlock x:Name="DashboardBreedingStatus"
@@ -108,7 +112,7 @@
             </StackPanel>
           </Border>
           <TextBlock Text="Local-first. No Python install required."
-                     Foreground="{StaticResource SidebarMuted}"
+                     Foreground="{DynamicResource SidebarMuted}"
                      FontSize="12"
                      TextWrapping="Wrap"
                      Margin="0,12,0,0"/>
@@ -126,7 +130,7 @@
 
       <Border Grid.Row="0"
               Style="{StaticResource Card}"
-              Background="{StaticResource Panel}">
+              Background="{DynamicResource Panel}">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -138,7 +142,7 @@
                        FontWeight="Bold"/>
             <TextBlock x:Name="DashboardNextAction"
                        Text="Load a save or plan without restrictions."
-                       Foreground="{StaticResource Muted}"
+                       Foreground="{DynamicResource Muted}"
                        FontSize="15"
                        TextWrapping="Wrap"
                        Margin="0,4,0,0"/>
@@ -189,14 +193,14 @@
                              FontSize="22"
                              FontWeight="SemiBold"/>
                   <TextBlock Text="For local worlds, auto-find usually detects Level.sav and matching player data. For servers, use Level.sav plus Players and DPS files when available."
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"
                              Margin="0,6,0,0"/>
                   <TextBox x:Name="LocalSavePath"
                            IsReadOnly="True"
                            Margin="0,14,0,0"/>
                   <TextBlock x:Name="SaveStatus"
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"
                              Margin="0,8,0,0"/>
                 </StackPanel>
@@ -221,25 +225,25 @@
                          Margin="0,14,0,14">
               <Border Style="{StaticResource StatCard}">
                 <StackPanel>
-                  <TextBlock Text="Owners in view" Foreground="{StaticResource Muted}"/>
+                  <TextBlock Text="Owners in view" Foreground="{DynamicResource Muted}"/>
                   <TextBlock x:Name="SavePlayerCount" Text="—" FontSize="28" FontWeight="Bold"/>
                 </StackPanel>
               </Border>
               <Border Style="{StaticResource StatCard}">
                 <StackPanel>
-                  <TextBlock Text="Owned Pals" Foreground="{StaticResource Muted}"/>
+                  <TextBlock Text="Owned Pals" Foreground="{DynamicResource Muted}"/>
                   <TextBlock x:Name="SavePalCount" Text="—" FontSize="28" FontWeight="Bold"/>
                 </StackPanel>
               </Border>
               <Border Style="{StaticResource StatCard}">
                 <StackPanel>
-                  <TextBlock Text="Species" Foreground="{StaticResource Muted}"/>
+                  <TextBlock Text="Species" Foreground="{DynamicResource Muted}"/>
                   <TextBlock x:Name="SaveSpeciesCount" Text="—" FontSize="28" FontWeight="Bold"/>
                 </StackPanel>
               </Border>
               <Border Style="{StaticResource StatCard}" Margin="0">
                 <StackPanel>
-                  <TextBlock Text="Passive Skills" Foreground="{StaticResource Muted}"/>
+                  <TextBlock Text="Passive Skills" Foreground="{DynamicResource Muted}"/>
                   <TextBlock x:Name="SavePassiveCount" Text="—" FontSize="28" FontWeight="Bold"/>
                 </StackPanel>
               </Border>
@@ -255,7 +259,7 @@
                   <TextBlock DockPanel.Dock="Bottom"
                              x:Name="SaveOwnerFilterStatus"
                              Text="Click a player to filter owned Pals."
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              Margin="8,8,8,0"/>
                   <ListView x:Name="SavePlayersList"
                             SelectionChanged="SavePlayersList_SelectionChanged"
@@ -353,7 +357,7 @@
                                FontWeight="SemiBold"/>
                   </Border>
                   <TextBlock x:Name="BreedingStatus"
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"
                              VerticalAlignment="Center"/>
                 </DockPanel>
@@ -370,7 +374,7 @@
                     <Label Content="Optional owned source Pal"/>
                     <ComboBox x:Name="StartPal" IsEditable="True" IsTextSearchEnabled="True" DisplayMemberPath="DisplayName"/>
                     <TextBlock Text="Leave empty to search from any available Pal."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                FontSize="12"
                                Margin="0,5,0,0"/>
                   </StackPanel>
@@ -378,7 +382,7 @@
                     <Label Content="Desired child Pal"/>
                     <ComboBox x:Name="TargetPal" IsEditable="True" IsTextSearchEnabled="True" DisplayMemberPath="DisplayName"/>
                     <TextBlock Text="Pick the target first."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                FontSize="12"
                                Margin="0,5,0,0"/>
                   </StackPanel>
@@ -398,7 +402,7 @@
                     <WrapPanel x:Name="PassiveSkillTags" Margin="0,8,0,0"/>
                     <TextBlock x:Name="PassiveSkillLimitStatus"
                                Text="0/4 passive skills selected. Cleaner parents with fewer extra passives are ranked higher."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                FontSize="12"
                                Margin="0,5,0,0"/>
                   </StackPanel>
@@ -410,7 +414,7 @@
                       <ComboBoxItem Content="2"/>
                     </ComboBox>
                     <TextBlock Text="Uses gender-change items."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                FontSize="12"
                                Margin="0,5,0,0"/>
                   </StackPanel>
@@ -447,7 +451,7 @@
                           Margin="0,12,0,0">
                   <StackPanel>
                     <TextBlock Text="The bundled default is normally correct. Use a custom JSON only when the game changes breeding rules or you are testing another dataset."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                TextWrapping="Wrap"/>
                     <DockPanel Margin="0,12,0,0">
                       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -464,7 +468,7 @@
                           IsExpanded="False"
                           Margin="0,12,0,0">
                   <TextBlock Margin="0,8,0,0"
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"
                              Text="Palworld combines both parents' passive skills, removes duplicates, then rolls how many parent passives the child inherits: 1 = 40%, 2 = 30%, 3 = 20%, 4 = 10%. A second roll can add random passives if empty slots remain. PalworldHelper ranks owned parent pairs by the estimated chance to hatch the exact desired passive set without extra random passives. Clean parents are better: together they should carry the desired passives and as few unwanted passives as possible. Duplicate passives on both parents do not improve the odds.&#x0a;&#x0a;Sources checked 2026-07-26: Palworld Wiki.gg – Breeding, section “Passing Down Passive Skills” (https://palworld.wiki.gg/wiki/Breeding); Palworld Wiki.gg – Passive Skills, section “Acquisition / Breeding” (https://palworld.wiki.gg/wiki/Passive_Skills)."/>
                 </Expander>
@@ -478,9 +482,9 @@
               </Grid.ColumnDefinitions>
               <GroupBox Header="Breeding Chain Results">
                 <ListBox x:Name="ResultList"
-                         Background="{StaticResource Panel}"
-                         Foreground="{StaticResource Text}"
-                         BorderBrush="{StaticResource Border}"
+                         Background="{DynamicResource Panel}"
+                         Foreground="{DynamicResource Text}"
+                         BorderBrush="{DynamicResource Border}"
                          FontSize="16"
                          Padding="10"
                          SelectionChanged="ResultList_SelectionChanged"/>
@@ -512,7 +516,7 @@
                 <StackPanel DockPanel.Dock="Top">
                   <TextBlock Text="Server Profiles" FontSize="22" FontWeight="SemiBold"/>
                   <TextBlock Text="Optional. Useful for server owners or shared servers."
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"
                              Margin="0,6,0,0"/>
                 </StackPanel>
@@ -541,15 +545,15 @@
                                FontSize="22"
                                FontWeight="SemiBold"/>
                     <TextBlock Text="Download Level.sav from a server via SSH/SFTP. Local players can ignore this page."
-                               Foreground="{StaticResource Muted}"
+                               Foreground="{DynamicResource Muted}"
                                TextWrapping="Wrap"
                                Margin="0,6,0,12"/>
-                    <Border Background="{StaticResource WarningSoft}"
+                    <Border Background="{DynamicResource WarningSoft}"
                             CornerRadius="8"
                             Padding="12"
                             Margin="0,0,0,12">
                       <TextBlock Text="Tip: download Level.sav together with the Players folder from the same save directory so ownership and storage data stay complete."
-                                 Foreground="{StaticResource Text}"
+                                 Foreground="{DynamicResource Text}"
                                  TextWrapping="Wrap"/>
                     </Border>
 
@@ -613,12 +617,12 @@
                   <Button Content="Download save" Style="{StaticResource SecondaryButton}" Click="DownloadSave_Click"/>
                 </WrapPanel>
                 <Border Grid.Row="2"
-                        Background="{StaticResource Panel2}"
+                        Background="{DynamicResource Panel2}"
                         CornerRadius="8"
                         Padding="12"
                         Margin="0,12,0,0">
                   <TextBlock x:Name="ServerStatus"
-                             Foreground="{StaticResource Muted}"
+                             Foreground="{DynamicResource Muted}"
                              TextWrapping="Wrap"/>
                 </Border>
               </Grid>
@@ -638,7 +642,7 @@
                            FontSize="22"
                            FontWeight="SemiBold"/>
                 <TextBlock Text="Updates, diagnostics, and safe cleanup tools."
-                           Foreground="{StaticResource Muted}"
+                           Foreground="{DynamicResource Muted}"
                            TextWrapping="Wrap"
                            Margin="0,6,0,12"/>
                 <WrapPanel>
@@ -647,7 +651,7 @@
                   <Button Content="Uninstall PalworldHelper" Style="{StaticResource DangerButton}" Click="Uninstall_Click"/>
                 </WrapPanel>
                 <TextBlock x:Name="MaintenanceStatus"
-                           Foreground="{StaticResource Muted}"
+                           Foreground="{DynamicResource Muted}"
                            TextWrapping="Wrap"
                            Margin="0,12,0,0"/>
               </StackPanel>
@@ -660,7 +664,7 @@
                            FontSize="22"
                            FontWeight="SemiBold"/>
                 <TextBlock x:Name="ObsoleteStatus"
-                           Foreground="{StaticResource Muted}"
+                           Foreground="{DynamicResource Muted}"
                            TextWrapping="Wrap"
                            Margin="0,6,0,10"/>
                 <WrapPanel>
@@ -669,7 +673,7 @@
                   <Button Content="Delete obsolete folder" Style="{StaticResource DangerButton}" Click="DeleteObsolete_Click"/>
                 </WrapPanel>
                 <TextBlock Text="This only removes old files archived during updates. Current app files, saves, settings, and custom JSON files are not deleted."
-                           Foreground="{StaticResource Muted}"
+                           Foreground="{DynamicResource Muted}"
                            TextWrapping="Wrap"
                            Margin="0,10,0,0"/>
               </StackPanel>
@@ -681,10 +685,10 @@
       <DockPanel Grid.Row="2"
                  Margin="0,12,0,0">
         <TextBlock DockPanel.Dock="Left"
-                   Foreground="{StaticResource Muted}"
+                   Foreground="{DynamicResource Muted}"
                    Text="PalworldHelper reads local files only unless you explicitly download from a configured server."/>
         <TextBlock DockPanel.Dock="Right"
-                   Foreground="{StaticResource Muted}"
+                   Foreground="{DynamicResource Muted}"
                    Text="Complete release folder: EXE + JSON + parser folder"/>
       </DockPanel>
     </Grid>
