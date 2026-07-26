@@ -1,11 +1,10 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = $PSScriptRoot
-$publicRoot = Join-Path (Split-Path -Parent $repoRoot) 'public'
-$publishRoot = Join-Path $publicRoot 'publish'
+$publishRoot = Join-Path (Split-Path -Parent $repoRoot) 'publish'
 
 $parserSource = 'https://github.com/deafdudecomputers/PalworldSaveTools.git'
 Remove-Item parser-upstream, dist, build -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force $publicRoot | Out-Null
+New-Item -ItemType Directory -Force $publishRoot | Out-Null
 Remove-Item $publishRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $publishRoot | Out-Null
 
