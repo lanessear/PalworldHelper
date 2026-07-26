@@ -1,4 +1,7 @@
+using System.Globalization;
 using System.IO;
+using System.Reflection;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 
@@ -83,5 +86,135 @@ public partial class MainWindow
         {
             MaintenanceStatus.Text = "✗ Uninstall could not be started: " + ex.Message;
         }
+    }
+
+    private void CreateDebugSummary_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PalworldHelper",
+                "debug");
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, "PalworldHelper-debug-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + ".txt");
+            File.WriteAllText(path, BuildDebugSummary(), Encoding.UTF8);
+            Clipboard.SetText(File.ReadAllText(path, Encoding.UTF8));
+            MaintenanceStatus.Text = $"✓ Debug summary created and copied to clipboard:\n{path}";
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatus.Text = "✗ Debug summary could not be created: " + ex.Message;
+        }
+    }
+
+    private string BuildDebugSummary()
+    {
+        var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+        var parserPath = Path.Combine(AppContext.BaseDirectory, "parser", "PalworldSaveParser.exe");
+        var output = new StringBuilder()
+            .AppendLine("PalworldHelper debug summary")
+            .AppendLine("============================")
+            .AppendLine(CultureInfo.InvariantCulture, $"Created: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}")
+            .AppendLine(CultureInfo.InvariantCulture, $"App version: {appVersion}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Base directory: {AppContext.BaseDirectory}")
+            .AppendLine(CultureInfo.InvariantCulture, $"OS: {Environment.OSVersion}")
+            .AppendLine(CultureInfo.InvariantCulture, $".NET: {Environment.Version}")
+            .AppendLine()
+            .AppendLine("Current save")
+            .AppendLine("------------")
+            .AppendLine(CultureInfo.InvariantCulture, $"Local save path: {ValueOrNone(LocalSavePath.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Local save exists: {File.Exists(LocalSavePath.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Players folder: {ValueOrNone(FindPlayersDirectoryForSummary(LocalSavePath.Text))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Players folder exists: {Directory.Exists(FindPlayersDirectoryForSummary(LocalSavePath.Text))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Save status: {ValueOrNone(SaveStatus.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Parsed players: {_parsedSave?.Players.Count ?? 0:N0}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Parsed pals: {_parsedSave?.Pals.Count ?? 0:N0}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Storage values: {StorageSummary()}")
+            .AppendLine()
+            .AppendLine("Parser")
+            .AppendLine("------")
+            .AppendLine(CultureInfo.InvariantCulture, $"Parser reported: {ValueOrNone(_parsedSave?.Parser)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Parser path: {parserPath}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Parser exists: {File.Exists(parserPath)}")
+            .AppendLine()
+            .AppendLine("Breeding")
+            .AppendLine("--------")
+            .AppendLine(CultureInfo.InvariantCulture, $"Breeding JSON: {ValueOrNone(BreedingJsonPath.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Breeding JSON exists: {File.Exists(BreedingJsonPath.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Breeding results: {_breeding.ResultCount:N0}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Pal names: {_breeding.Names.Count:N0}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Selected source Pal: {ValueOrNone(StartPal.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Selected child Pal: {ValueOrNone(TargetPal.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Desired passives: {(_selectedPassiveSkills.Count == 0 ? "none" : string.Join(", ", _selectedPassiveSkills))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Saved breeding goals: {_settings.BreedingWishlist.Count:N0}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Breeding status: {ValueOrNone(BreedingStatus.Text)}")
+            .AppendLine()
+            .AppendLine("Owner filter")
+            .AppendLine("------------")
+            .AppendLine(CultureInfo.InvariantCulture, $"Configured player name: {ValueOrNone(PlayerName.Text)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Selected owner name: {ValueOrNone(_selectedOwnerName)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Show all owners: {_showAllOwners}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Current owner name: {ValueOrNone(CurrentOwnerName())}")
+            .AppendLine()
+            .AppendLine("Server profiles")
+            .AppendLine("---------------");
+
+        foreach (var profile in _settings.Profiles)
+        {
+            output
+                .AppendLine(CultureInfo.InvariantCulture, $"- {ValueOrNone(profile.Name)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Host: {RedactHost(profile.Host)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Port: {profile.Port}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  User: {ValueOrNone(profile.Username)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Auth: {ValueOrNone(profile.Authentication)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Remote save path: {ValueOrNone(profile.RemoteSavePath)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Player name: {ValueOrNone(profile.PlayerName)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Has password: {!string.IsNullOrWhiteSpace(profile.EncryptedPassword)}")
+                .AppendLine(CultureInfo.InvariantCulture, $"  Has SSH key path: {!string.IsNullOrWhiteSpace(profile.PrivateKeyPath)}");
+        }
+
+        return output
+            .AppendLine()
+            .AppendLine("Package files")
+            .AppendLine("-------------")
+            .AppendLine(CultureInfo.InvariantCulture, $"Default breeding JSON exists: {File.Exists(Path.Combine(AppContext.BaseDirectory, "palworld_breeding_results_v1.0_2026-07-24.json"))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Passive skills JSON exists: {File.Exists(Path.Combine(AppContext.BaseDirectory, "palworld_passive_skills.json"))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Character names JSON exists: {File.Exists(Path.Combine(AppContext.BaseDirectory, "palworld_character_names.json"))}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Third-party notices exist: {File.Exists(Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.md"))}")
+            .ToString();
+    }
+
+    private string StorageSummary()
+    {
+        if (_parsedSave is null || _parsedSave.Pals.Count == 0) return "none";
+        return string.Join(", ", _parsedSave.Pals
+            .GroupBy(pal => string.IsNullOrWhiteSpace(pal.Storage) ? "World / base" : pal.Storage, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
+            .Select(group => string.Create(CultureInfo.InvariantCulture, $"{group.Key}: {group.Count():N0}")));
+    }
+
+    private static string? FindPlayersDirectoryForSummary(string savePath)
+    {
+        if (string.IsNullOrWhiteSpace(savePath)) return null;
+        var levelDirectory = Path.GetDirectoryName(savePath);
+        if (string.IsNullOrWhiteSpace(levelDirectory)) return null;
+        var direct = Path.Combine(levelDirectory, "Players");
+        if (Directory.Exists(direct)) return direct;
+        var parent = Directory.GetParent(levelDirectory)?.FullName;
+        if (string.IsNullOrWhiteSpace(parent)) return direct;
+        return Path.Combine(parent, "Players");
+    }
+
+    private static string ValueOrNone(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "(none)" : value.Trim();
+
+    private static string RedactHost(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "(none)";
+        var host = value.Trim();
+        var dot = host.IndexOf('.');
+        return dot <= 0 ? host : host[..dot] + ".…";
     }
 }
