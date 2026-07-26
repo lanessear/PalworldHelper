@@ -542,7 +542,7 @@ The compact format may use "names" instead of "pals". Every result must contain 
                 && row.PassiveSkills.Equals(passiveText, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string FormatPassiveSuffix(IReadOnlyList<string> passives)
+    private static string FormatPassiveSuffix(List<string> passives)
         => passives.Count == 0 ? "" : $" · {string.Join(", ", passives)}";
 
     private void ResultList_SelectionChanged(object sender, SelectionChangedEventArgs e)
