@@ -210,7 +210,7 @@ public sealed class BreedingService
         return null;
     }
 
-    public IReadOnlyList<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromAvailable(string target, IReadOnlySet<string>? availableSpecies)
+    public List<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromAvailable(string target, IReadOnlySet<string>? availableSpecies)
     {
         if (string.IsNullOrWhiteSpace(target)) return [];
 
@@ -249,7 +249,7 @@ public sealed class BreedingService
         return shortestPaths;
     }
 
-    private IReadOnlyList<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromStart(string start, string target, IReadOnlySet<string>? availableSpecies)
+    private List<IReadOnlyList<BreedingPlanStep>> FindAllShortestPathsFromStart(string start, string target, IReadOnlySet<string>? availableSpecies)
     {
         if (start.Equals(target, StringComparison.OrdinalIgnoreCase)) return [[]];
 
